@@ -1,0 +1,94 @@
+%% This document has been formatted to meet the requirements of the British
+%% Ecological Society (BES)
+\documentclass[12pt]{article}
+
+\usepackage{url}
+\usepackage{geometry}
+\usepackage[round]{natbib}
+\usepackage{graphicx}
+\geometry{a4paper}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{authblk}
+\usepackage[running]{lineno}
+\usepackage{setspace}
+\usepackage{framed}   % for text boxes
+\usepackage{booktabs} % For creating pretty tables
+\usepackage{ctable} % Uses booktabs but gives us captions and footnotes
+\usepackage{footmisc} % For fancy symbols used in the table footnotes
+\usepackage[section]{placeins}  % To keep floats in their designated sections
+% using the \FloatBarrier command
+
+%% This package allows us to skip a line between paragraphs
+\usepackage{parskip}
+
+%% The amssymb and mathrsfs packages provide various useful mathematical symbols
+\usepackage{amssymb}
+\usepackage{mathrsfs}
+
+%%The amsmath package allows me to write nice equations (\align* and \tag)
+\usepackage{amsmath}
+
+\doublespacing
+
+%\title{Incorporating variability in simulations of seasonally forced phenology using integral projection models}
+%
+%\author[a]{Devin W. Goodsman\thanks{dgoodsman@lanl.gov}}
+%\author[b]{Brian H. Aukema}
+%\author[c]{Nate McDowell}
+%\author[a]{Richard S. Middleton}
+%\author[a]{Chonggang Xu\thanks{cxu@lanl.gov}}
+%
+%\affil[a]{Earth and Environmental Science Division, Los Alamos National Laboratory, Los Alamos, New Mexico, 87545, USA}
+%\affil[b]{Department of Entomology, 432A Hodson Hall, 1980 Folwell Ave, St Paul, Minnesota, 55108, USA}
+%\affil[c]{Pacific Northwest National Laboratory, Richland, Washington, USA}
+%
+%\renewcommand\Authands{ and }
+%\date{*Corresponding author: dgoodsman@lanl.gov \\
+%\dag Corresponding author: cxu@lanl.gov}
+
+\begin{document}
+
+\section*{Appendix S1: Extended von Foerster Derivation}
+
+To demonstrate the connection between eqn 8 and classical age-structured models, we start with eqn 8, and derive an analytic solution for the extended von Foerster model \citep{Gilbert2004}. The extended von Foerster model extends the classical McKendrick-von Foerster model \citep{McKendrick1926, vonFoerster1959} by allowing the aging rate to vary in the population \citep{Gilbert2004}. \citet{Gilbert2004} incorporated normally distributed variation of development rate which requires the relaxation of our positive domain restriction on the probability density functions for the development rate and accumulated development. The normal probability density function with a mean given by $r_0$, the constant development rate in a constant temperature environment, is
+
+\begin{equation*}
+p(r; r_0, \sigma^2) = \frac{1}{\sqrt{2\pi\sigma^2}}\text{exp}\bigg(\frac{(r - r_0)^2}{2\sigma^2}\bigg). \tag{eqn A1.1}
+\end{equation*}
+
+Although normally distributed rate variability permits biologically unrealistic negative development, for many combinations of rate and variability, the proportion of the population that develops negatively is negligible \citep{Gilbert2004}.
+
+Due to the scaling property of the normal distribution, the equivalent normal probability density function for a discretized time domain is
+
+\begin{equation*}
+p(r; r_0\Delta\text{t}, \Delta\text{t}^2\sigma^2) = \frac{1}{\sqrt{2\pi(\Delta\text{t})^2\sigma^2}}\text{exp}\bigg(\frac{(r - r_0\Delta\text{t})^2}{2(\Delta\text{t})^2\sigma^2}\bigg), \tag{eqn A1.2}
+\end{equation*}
+
+where $\Delta\text{t}$ is the time increment.
+
+If we start with the initial condition (eqn 9) and iterate eqn 8 for one time step using eqn A1.1 for $k(\cdot)$, we obtain
+
+\begin{equation*}
+n_1(a) = (So)p(r; r_0\Delta\text{t}, \Delta\text{t}^2\sigma^2). \tag{eqn A1.2}
+\end{equation*}
+
+Note, that we integrate eqn 8 over all reals instead of only over the positive reals as originally defined. By iteration of eqn 8 and by mathematical induction, we can find an analytic solution for $n$ time steps when $S_0 = 1$:
+
+\begin{equation*}
+x_n(a) = \frac{1}{\sqrt{2\pi \sigma^2 n(\Delta\text{t})^2}}\text{exp}\bigg(\frac{(a - r_0n\Delta\text{t})^2}{2 \sigma^2 n(\Delta\text{t})^2}\bigg). \tag{eqn A1.3}
+\end{equation*}
+
+Recall that $t = n\Delta\text{t}$. If we set $\Delta\text{t} = 1$, we obtain
+
+\begin{equation*}
+x(a,t) = \frac{1}{\sqrt{2\pi \sigma^2 t}}\text{exp}\bigg(\frac{(a - r_0t)^2}{2 \sigma^2 t}\bigg), \tag{eqn A1.4}
+\end{equation*}
+
+which is the analytic solution of the extended von Foerster model given in \citet{Gilbert2004}. Similar analytic solutions can be obtained under the more realistic scenario where the probability distributions on the rate are defined strictly on the positive domain (for log-normally distributed rates, for example). These analytic solutions, however, are only valid for development at a constant rate because when the development rate varies over time, and the distribution is not stable, the convolution does not necessarily yield another probability density function of the same type.
+
+\bibliographystyle{mee}
+
+\bibliography{SPEcology}% your .bib file(s)
+
+\end{document}

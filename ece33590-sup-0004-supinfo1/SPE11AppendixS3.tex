@@ -1,0 +1,103 @@
+%% This document has been formatted to meet the requirements of the British
+%% Ecological Society (BES)
+\documentclass[12pt]{article}
+
+\usepackage{url}
+\usepackage{geometry}
+\usepackage[round]{natbib}
+\usepackage{graphicx}
+\geometry{a4paper}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{authblk}
+\usepackage[running]{lineno}
+\usepackage{setspace}
+\usepackage{framed}   % for text boxes
+\usepackage{booktabs} % For creating pretty tables
+\usepackage{ctable} % Uses booktabs but gives us captions and footnotes
+\usepackage{footmisc} % For fancy symbols used in the table footnotes
+\usepackage[section]{placeins}  % To keep floats in their designated sections
+% using the \FloatBarrier command
+
+%% This package allows us to skip a line between paragraphs
+\usepackage{parskip}
+
+%% The amssymb and mathrsfs packages provide various useful mathematical symbols
+\usepackage{amssymb}
+\usepackage{mathrsfs}
+
+%%The amsmath package allows me to write nice equations (\align* and \tag)
+\usepackage{amsmath}
+
+\doublespacing
+
+%\title{Incorporating variability in simulations of seasonally forced phenology using integral projection models}
+%
+%\author[a]{Devin W. Goodsman\thanks{dgoodsman@lanl.gov}}
+%\author[b]{Brian H. Aukema}
+%\author[c]{Nate McDowell}
+%\author[a]{Richard S. Middleton}
+%\author[a]{Chonggang Xu\thanks{cxu@lanl.gov}}
+%
+%\affil[a]{Earth and Environmental Science Division, Los Alamos National Laboratory, Los Alamos, New Mexico, 87545, USA}
+%\affil[b]{Department of Entomology, 432A Hodson Hall, 1980 Folwell Ave, St Paul, Minnesota, 55108, USA}
+%\affil[c]{Pacific Northwest National Laboratory, Richland, Washington, USA}
+%
+%\renewcommand\Authands{ and }
+%\date{*Corresponding author: dgoodsman@lanl.gov \\
+%\dag Corresponding author: cxu@lanl.gov}
+
+\begin{document}
+
+\section*{Appendix S3: Mountain pine beetle integral projection model}
+
+\FloatBarrier
+
+Here we describe the mathematics underlying a stage and age-structured integral projection model of seasonally forced mountain pine beetle demography. The model simulates the insect's progression through nine distinct life stages: oviposition, egg, four larval instars (L1, L2, L3, L4), the pupal, teneral adult, and adult stages. The ages within each of these stages are represented with $a_q$, $a_r$, $a_s$, $a_t$, $a_u$, $a_v$, $a_w$, $a_x$, and $a_y$ ($b_q$, $b_r$, $b_s$, $b_t$, $b_u$, $b_v$, $b_w$, $b_x$, and $b_y$) respectively. The distributions of individuals of each age within each stage are are represented with $q(a_q)$, $r(a_r)$, $s(a_s)$, $t(a_t)$, $u(a_u)$, $v(a_v)$, $w(a_w)$, $x(a_x)$, and $y(a_y)$. As described in the materials and methods section and in Appendix S2, each stage has it's own temperature-dependent rate function which varies from one time step to the next and so the aging kernel $k_{i,s}(b - a)$ is indexed to show that it varies by life stage and by time step. In addition, the egg, pupa, teneral adult and adult life stages have mortality functions ($m_{i,s}$) that are step functions with 100\% mortality happening at temperatures at or below -18$^\circ$C and zero percent mortality otherwise. To obtain estimates of population densities, we perform a second integration for each integral projection model as shown in eqn 11 to obtain population densities for each life stage ($Q_{i+1}$, $R_{i+1}$, $S_{i+1}$, $T_{i+1}$, $U_{i+1}$, $V_{i+1}$, $W_{i+1}$, $X_{i+1}$, and $Y_{i+1}$).
+
+The stage and age structured model for the oviposition, egg and first larval instar stages is
+
+\begin{align*}
+Q_{i+1} &= (1 - m_{i,q})\underbrace{Q_{i}\text{exp}(-r_q[T_i]\Delta T)}_{\text{eggs not yet laid}}, \tag{eqn A4.1a}\\
+R_{i+1} &= \underbrace{(1 - m_{i,q})Q_{i}(1 - \text{exp}(-r_q(T_i)\Delta T))}_{\text{eggs laid by time $i+1$}} +\\
+& (1 - m_{i,r})\int_0^{\gamma_1}\int_0^{\gamma_1} r_i(a_r)k_{i,r}(b_r - a_r)\text{da}_r\text{db}_r, \tag{eqn A4.1b}\\
+S_{i+1} &= (1 - m_{i,r})\bigg(\underbrace{\int_{\gamma_1}^{\infty}\int_{\gamma_1}^{\infty} r_i(a_r)k_{i,r}(b_r - a_r)\text{da}_r\text{db}_r}_{\text{L1 developed by time $i+1$}} -\\
+& \underbrace{\int_{\gamma_1}^{\infty}\int_{\gamma_1}^{\infty} r_{i-1}(a_r)k_{i-1,r}(b_r - a_r)\text{da}_r\text{db}_r}_{\text{L1 developed previously}}\bigg)+\\
+& \underbrace{\int_0^{\gamma_2} \int_0^{\gamma_2} s_i(a_s)k_{i,s}(b_s - a_s)\text{da}_s\text{db}_s}_{\text{remained as L1 at time $i+1$}}. \tag{eqn A4.1c}
+\end{align*}
+
+Note that the method of simulation for the oviposition stage differs from all of the other stages in that we simulate the discretized differential equation $dQ/dR = -r_q[T_i]Q$ as described in \citet{Regniere2012a} with an initial condition in each time step given by $Q(t_i) = Q_i$, where $\Delta T = t - t_i$.
+
+The equations governing the dynamics of the second through the fourth instar larval stages, are
+
+\begin{align*}
+T_{i+1} &= \bigg(\underbrace{\int_{\gamma_2}^{\infty}\int_{\gamma_2}^{\infty} s_i(a_s)k_{i,s}(b_s - a_s)\text{da}_s\text{db}_s}_{\text{L2 developed by time $i+1$}} -\\
+& \underbrace{\int_{\gamma_2}^{\infty}\int_{\gamma_2}^{\infty} s_{i-1}(a_s)k_{i-1,s}(b_s - a_s)\text{da}_s\text{db}_s}_{\text{L2 developed previously}}\bigg)+\\
+& \int_0^{\gamma_3} \int_0^{\gamma_3} t_i(a_t)k_{i,t}(b_t - a_t)\text{da}_t\text{db}_t, \tag{eqn A4.1d}\\
+U_{i+1} &= \bigg(\underbrace{\int_{\gamma_3}^{\infty}\int_{\gamma_3}^{\infty} t_i(a_t)k_{i,t}(b_t - a_t)\text{da}_t\text{db}_t}_{\text{L3 developed by time $i+1$}} -\\
+& \underbrace{\int_{\gamma_3}^{\infty}\int_{\gamma_3}^{\infty} t_{i-1}(a_t)k_{i-1,t}(b_t - a_t)\text{da}_t\text{db}_t}_{\text{L3 developed previously}}\bigg)+\\
+& \int_0^{\gamma_4}\int_0^{\gamma_4} u_i(a_u)k_{i,u}(b_u - a_u)\text{da}_u\text{db}_u, \tag{eqn A4.1e}\\
+V_{i+1} &= \bigg(\underbrace{\int_{\gamma_4}^{\infty}\int_{\gamma_4}^{\infty} u_i(a_u)k_{i,u}(b_u - a_u)\text{da}_u\text{db}_u}_{\text{L4 developed by time $i+1$}} -\\
+& \underbrace{\int_{\gamma_4}^{\infty}\int_{\gamma_4}^{\infty} u_{i-1}(a_u)k_{i-1,u}(b_u - a_u)\text{da}_u\text{db}_u}_{\text{L4 developed previously}}\bigg)+\\
+& \int_0^{\gamma_5}\int_0^{\gamma_5} v_i(a_v)k_{i,v}(b_v - a_b)\text{da}_v\text{db}_v. \tag{eqn A4.1f}
+\end{align*}
+
+The equations governing the dynamics of the pupal, teneral adult and adult stages, are defined by 
+
+\begin{align*}
+W_{i+1} &= \bigg(\underbrace{\int_{\gamma_5}^{\infty}\int_{\gamma_5}^{\infty} v_i(a_v)k_{i,v}(b_v-a_v)\text{da}_v \text{db}_v}_{\text{Pupae developed by $i+1$}} -\\
+& \underbrace{\int_{\gamma_5}^{\infty}\int_{\gamma_5}^{\infty} v_{i-1}(a_v)k_{i-1,v}(b_v-a_v)\text{da}_v \text{db}_v}_{\text{pupae developed previously}}\bigg)+\\
+& (1 - m_{i,w})\int_0^{\gamma_6} \int_0^{\gamma_6} w_i(a_w)k_{i,w}(b_w-a_w)\text{da}_w\text{db}_w, \tag{eqn A4.1g}\\
+X_{i+1} &= (1 - m_{i,w})\bigg(\underbrace{\int_{\gamma_6}^{\infty}\int_{\gamma_6}^{\infty} w_i(a_w)k_{i,w}(b_w - a_w)\text{da}_w\text{db}_w}_{\text{tenerals developed by time $i+1$}} -\\
+& \underbrace{\int_{\gamma_6}^{\infty}\int_{\gamma_6}^{\infty} w_{i-1}(a_w)k_{i-1,w}(b_w - a_w)\text{da}_w\text{db}_w}_{\text{tenerals developed previously}}\bigg)+\\
+& (1 - m_{i,x})\int_0^{\gamma_7}\int_0^{\gamma_7} x_i(a_x)k_{i,x}(b_x - a_x)\text{da}_x\text{db}_x, \tag{eqn A4.1h}\\
+Y_{i+1} &= (1-m_{i,y})\underbrace{\int_{\gamma_7}^{\infty}\int_{\gamma_7}^{\infty} x_i(a_x)k_{i,x}(b_x - a_x)\text{da}_x\text{db}_x}_{\text{adults developed by time $i+1$}}. \tag{eqn A4.1i}\\
+\end{align*}
+
+Note that we do not account for the distribution of development in the adult stage but rather integrate the cumulative density of individuals that reach the adult stage $Y_{i+1}$.
+
+\bibliographystyle{mee}
+
+\bibliography{SPEcology}% your .bib file(s)
+
+\end{document}
