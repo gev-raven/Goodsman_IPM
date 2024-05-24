@@ -38,5 +38,11 @@ ImapFuncNewJ = function(Tmin, Tmax, StartT){
 ####################################################################
 ##### IPM Model Test -----
 ####################################################################
-  
-Temp = read.csv
+
+
+temp_df = read.csv("") #takes csv file
+temp_df_cols <- select(temp_df, HUC_10, Mean) #filters columns
+filter(temp_df_cols, HUC_10 == "1706020503") # filters stream identifier to Marsh
+temp <- temp_df_cols["Mean"]
+
+
