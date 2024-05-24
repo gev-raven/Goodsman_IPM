@@ -7,3 +7,36 @@
 
 # Model assumes no egg mortality.
 
+#####################################################################
+
+# The ImapFunc function takes temperature as input (Temp)
+
+# The ImapFuncNewJ function returns as output a matrix
+# with rows that comprise
+# vectors of the number of individuals in each of the 
+# nine life stages (9 rows and 443 columns). 
+# Note also that for this version, Tmin and Tmax
+# must be exactly 443 days in length.
+
+
+####################################################################
+###### IPM Model Start ----- 
+####################################################################
+
+ImapFuncNewJ = function(Tmin, Tmax, StartT){
+
+#### Components of Model ----- ####
+
+  Temp = 
+
+
+    
+    
+    
+    
+    
+####################################################################
+##### IPM Model Test -----
+####################################################################
+  
+Temp = read.csv
