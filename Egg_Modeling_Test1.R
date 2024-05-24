@@ -48,8 +48,15 @@ temp_df <- temp_df[which(temp_df$HUC_10 %in% "1706020503"),]
                   #filters to only include Marsh Creek ("1706020503" is creek identifier)
 temp_df$Ydate <- yday(temp_df$Date) #convert date to day of year (value 1 to 365)
 temp_df$Ydate
-temp_df$Jdate <- JD(temp_df$Date) ## Doesn't work. JD not available
+temp_df$Jdate <- temp_df$Date
+
+
+
+#temp_df$Jdate <- julian(1, 1, -4713) 
+julian(temp_df$Jdate, origin = as.Date("1993-01-01"))
 temp_df$Jdate
+
+temp
 
 temp <- temp_df$Mean #assigns variable temp to the mean temperatures
 temp <- as.numeric(temp)
@@ -83,24 +90,24 @@ ImapFuncNewJ = function(Tmin, Tmax, StartT){
     
     daily_develop <- (1/develop_time) #daily development rate
         frame <- temp_df
-        frame$DailyDevelopment < daily_develop
+        frame$DailyDevelopment <- daily_develop
         #### BearValleyElkCreekTemperaturedaily$dailydevelopment<-(1/develop.time) #daily development rate
 
     
     #define development period
 
     timetoemerge <- NULL
-    startspawn <- 2454680 #set to august 1st, change format?
+    startspawn <- 2454680 #current in julian, set to august 1st, change format?
     endspawn <- startspawn + 40
   
     for (spawndate in startspawn:endspawn) {
     
       DevelopmentPeriod <- subset(frame, #development period made a subset
-      Ydate >= spawndate & Ydate <= (startspawn+366)) #year set to count up to a year from spawning
+      Jdate >= spawndate & Jdate <= (startspawn+366)) #year set to count up to a year from spawning
     
       DevelopmentPeriod$TotalDevelopment <- cumsum(DevelopmentPeriod$DailyDevelopment) #total development = sum(dailydevelopment)
     
-      y <- min(which((cumsum(DevelopmentPeriod$dailydevelopment)) >= 1)) #once y hits 1 is emergence
+      y <- min(which((cumsum(DevelopmentPeriod$DailyDevelopment)) >= 1)) #once y hits 1 is emergence
     
       timetoemerge <- rbind(timetoemerge,y)
     }
@@ -143,7 +150,7 @@ ImapFuncNewJ = function(Tmin, Tmax, StartT){
       ####################################
       
       # Step 2: Computing the development rate for eggs
-      Y2 = development.func(Tp = , a_egg, b_egg, c_egg)
+      Y2 = development.func(Tp = , a = a_egg, b = b_egg, c= c_egg)
 
     }
   
