@@ -16,6 +16,39 @@
 # and columns as individual days.
 
 
+
+####################################################################
+###### Packages Set Up ----- 
+####################################################################
+
+install.packages("lubridate")
+install.packages("anytime")
+install.packages("tidyverse")
+install.packages("dbplyr")
+install.packages("dplyr")
+install.packages("dtplyr")
+install.packages("insol")
+
+
+####################################################################
+###### Temperature Set Up ----- 
+####################################################################
+
+temp_df <- read.csv("C:\\Users\\Grace.Veenstra\\Documents\\GitHub\\Goodsman_IPM\\Egg Modeling Test\\MarshCreek_Temp_2013.csv",
+                    header=TRUE) #takes csv file and creates dataframe
+temp_df <- temp_df[c("Date","HUC_10","Mean")] #removes 'min' 'max' and 'HUC_8' columns from frame
+temp_df <- temp_df[which(temp_df$HUC_10 %in% "1706020503"),] 
+                  #filters to only include Marsh Creek ("1706020503" is creek identifier)
+
+temp_df$Jdate <- as.POSIXct(as.character(temp_df$Date), format = "%m/%d/%Y")
+temp_df$Jdate <- yday(temp_df$Date) #convert date to day of year (value 1 to 365)
+
+temp_df$Jdate
+
+temp <- temp_df$Mean #assigns variable temp to the mean temperatures
+temp <- as.numeric(temp)
+temp
+
 ####################################################################
 ###### IPM Model Start ----- 
 ####################################################################
@@ -29,58 +62,62 @@ ImapFuncNewJ = function(Tmin, Tmax, StartT){
   
   Temp
 
-  ## Beacham & Murray Egg Development Model
+  ## the Beacham & Murray Egg Development Model
   ## Predicts emergence timing of Chinook Salmon in Salmon River
   # Notes: Constants from 1990 paper, spawn date assumed August 1st
     
   #### NEEDS MODIFICATION FOR "BearValley..."
     
-  development.func = function(Tp, a, b, c) {
+  development_func = function(Tp, a, b, c) {
 
     # develop.time is the development time (in days)
+    # Tp is mean daily temp;
 
-    develop.time <- exp(log(a)+log((Tp-c)^b))
+    develop_time <- exp(log(a)+log((Tp-c)^b))
     
-    daily.develop <- (1/develop.time) #daily development rate
+    daily_develop <- (1/develop_time) #daily development rate
         #### BearValleyElkCreekTemperaturedaily$dailydevelopment<-(1/develop.time) #daily development rate
 
     
     #define development period
 
     timetoemerge <- NULL
-    startspawn <- 2454680
+    startspawn <- 2454680 #set to august 1st, change format?
     endspawn <- startspawn + 40
   
     for (spawndate in startspawn:endspawn) {
     
-      DevelopmentPeriod <- subset(BearValleyElkCreekTemperaturedaily, 
-      Ydate >= spawndate & Ydate <= (startspawn+366))
+      DevelopmentPeriod <- subset(BearValleyElkCreekTemperaturedaily, #development period made a subset
+      Ydate >= spawndate & Ydate <= (startspawn+366)) #year set to count up to a year from spawning
     
-      DevelopmentPeriod$totaldevelopment <- cumsum(DevelopmentPeriod$dailydevelopment)
+      DevelopmentPeriod$totaldevelopment <- cumsum(DevelopmentPeriod$dailydevelopment) #total development = sum(dailydevelopment)
     
-      y <- min(which((cumsum(DevelopmentPeriod$dailydevelopment)) >= 1))
+      y <- min(which((cumsum(DevelopmentPeriod$dailydevelopment)) >= 1)) #once y hits 1 is emergence
     
       timetoemerge <- rbind(timetoemerge,y)
     }
 
   }
-  
-  
-  ## the lognormal probability density function
-  
+
+  # the lognormal probability density function
   LnormDist = function(x, mulog, sigmalog){
     
     y = 1/(x*sigmalog*sqrt(2*pi))*exp(-1/(2*sigmalog^2)*(log(x)-mulog)^2)
     
     return(y)
   }
-
   
+
   ## Defining the parameters -----
   ################################
   
-  # Parameters for egg development
-
+  # defining time step
+  deltat = 1.0 #units are days
+  
+  #initial number of eggs laid
+  imax = 100
+  
+  # Parameters for egg development rate
     Tp <- BearValleyElkCreekTemperaturedaily$Temperature
     a_egg <- exp(10.404)
     b_egg <-- 2.043
@@ -99,35 +136,13 @@ ImapFuncNewJ = function(Tmin, Tmax, StartT){
       
       # Step 2: Computing the development rate for eggs
       Y2 = development.func(Tp = , a_egg, b_egg, c_egg)
-      
-      if(Y2 > 0.0){
-        # Step 4 computing the Fourier transform of the aging kernel
-        mu1 = log(Y2*deltat)
-        G1 = LnormDist(x = avec, mulog = mu1, sigmalog = sigma1) #probability density function
-        G1 = G1/sum(G1)     # normalizing
-        
-        # Step 5: Doing the convolution
-        # Inverse Fourier transforming
-        OE = ConvolveFunc(x1 = OldE, y1 = G1, padsize = length(avec)) + NewEggstm1*G1
-        NewEggstm1 = NewEggs
-        
-        # Step 6: Computing how many eggs there are
-        Eggs[i] = sum(na.omit(OE[1:128])) + NewEggs
-        
-      }else{
-        OE = OldE
-        NewEggstm1 = NewEggstm1 + NewEggs
-        Eggs[i] = sum(na.omit(OE[1:128])) + NewEggstm1
-      }
-      
-      ### Others ~
-        
+
     }
   
     ### Setup the IPM Matrix Output
     
     LifeCycleMat = matrix(c(Eggs),
-                          nrow = 1, ncol = 443, byrow = TRUE)
+                          nrow = 1, ncol = 365, byrow = TRUE)
 
     return(LifeCycleMat)
 }   
@@ -137,9 +152,14 @@ ImapFuncNewJ = function(Tmin, Tmax, StartT){
 ####################################################################
 
 
-temp_df = read.csv("", header=TRUE) #takes csv file
-temp_df_cols <- select(temp_df, HUC_10, Mean) #filters columns
-filter(temp_df_cols, HUC_10 == "1706020503") # filters stream identifier to Marsh
-temp <- temp_df_cols["Mean"]
 
+ptm <- proc.time()
+Freq_Egg = ImapFuncNewJ(Tmin = Tmin, StartT = 15)
+proc.time() - ptm
+
+Times = 1:360
+plot(Out1[1,] ~ Times, type = 'l')
+lines(Out1[2,] ~ Times, lty = 2)
+
+colSums(Out1)
 
