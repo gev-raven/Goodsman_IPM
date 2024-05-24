@@ -22,12 +22,19 @@
 ####################################################################
 
 install.packages("lubridate")
+library(lubridate)
 install.packages("anytime")
+library(anytime)
 install.packages("tidyverse")
+library(tidyverse)
 install.packages("dbplyr")
+library(dbplyr)
 install.packages("dplyr")
+library(dplyr)
 install.packages("dtplyr")
-install.packages("insol")
+library(dtplyr)
+install.packages("insol") #insol package no longer available
+library(insol)
 
 
 ####################################################################
@@ -39,15 +46,14 @@ temp_df <- read.csv("C:\\Users\\Grace.Veenstra\\Documents\\GitHub\\Goodsman_IPM\
 temp_df <- temp_df[c("Date","HUC_10","Mean")] #removes 'min' 'max' and 'HUC_8' columns from frame
 temp_df <- temp_df[which(temp_df$HUC_10 %in% "1706020503"),] 
                   #filters to only include Marsh Creek ("1706020503" is creek identifier)
-
-temp_df$Jdate <- as.POSIXct(as.character(temp_df$Date), format = "%m/%d/%Y")
-temp_df$Jdate <- yday(temp_df$Date) #convert date to day of year (value 1 to 365)
-
+temp_df$Ydate <- yday(temp_df$Date) #convert date to day of year (value 1 to 365)
+temp_df$Ydate
+temp_df$Jdate <- JD(temp_df$Date) ## Doesn't work. JD not available
 temp_df$Jdate
 
 temp <- temp_df$Mean #assigns variable temp to the mean temperatures
 temp <- as.numeric(temp)
-temp
+
 
 ####################################################################
 ###### IPM Model Start ----- 
@@ -60,7 +66,7 @@ ImapFuncNewJ = function(Tmin, Tmax, StartT){
 
   # temperature in degrees Celsius
   
-  Temp
+  temp
 
   ## the Beacham & Murray Egg Development Model
   ## Predicts emergence timing of Chinook Salmon in Salmon River
@@ -76,6 +82,8 @@ ImapFuncNewJ = function(Tmin, Tmax, StartT){
     develop_time <- exp(log(a)+log((Tp-c)^b))
     
     daily_develop <- (1/develop_time) #daily development rate
+        frame <- temp_df
+        frame$DailyDevelopment < daily_develop
         #### BearValleyElkCreekTemperaturedaily$dailydevelopment<-(1/develop.time) #daily development rate
 
     
@@ -87,10 +95,10 @@ ImapFuncNewJ = function(Tmin, Tmax, StartT){
   
     for (spawndate in startspawn:endspawn) {
     
-      DevelopmentPeriod <- subset(BearValleyElkCreekTemperaturedaily, #development period made a subset
+      DevelopmentPeriod <- subset(frame, #development period made a subset
       Ydate >= spawndate & Ydate <= (startspawn+366)) #year set to count up to a year from spawning
     
-      DevelopmentPeriod$totaldevelopment <- cumsum(DevelopmentPeriod$dailydevelopment) #total development = sum(dailydevelopment)
+      DevelopmentPeriod$TotalDevelopment <- cumsum(DevelopmentPeriod$DailyDevelopment) #total development = sum(dailydevelopment)
     
       y <- min(which((cumsum(DevelopmentPeriod$dailydevelopment)) >= 1)) #once y hits 1 is emergence
     
