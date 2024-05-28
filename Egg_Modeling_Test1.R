@@ -46,19 +46,11 @@ temp_df <- read.csv("C:\\Users\\Grace.Veenstra\\Documents\\GitHub\\Goodsman_IPM\
 temp_df <- temp_df[c("Date","HUC_10","Mean")] #removes 'min' 'max' and 'HUC_8' columns from frame
 temp_df <- temp_df[which(temp_df$HUC_10 %in% "1706020503"),] 
                   #filters to only include Marsh Creek ("1706020503" is creek identifier)
-temp_df$Ydate <- yday(temp_df$Date) #convert date to day of year (value 1 to 365)
-temp_df$Ydate
+temp_df$Ydate <- yday(temp_df$Date) #convert date to 'day of year' (value 1 to 365)
 temp_df$Jdate <- temp_df$Date
+temp_df$Jdate <- as.numeric(as.Date(temp_df$Jdate, origin="1993-01-01")) #converts date to 'days since 1993-1-1'
 
-
-
-#temp_df$Jdate <- julian(1, 1, -4713) 
-julian(temp_df$Jdate, origin = as.Date("1993-01-01"))
-temp_df$Jdate
-
-temp
-
-temp <- temp_df$Mean #assigns variable temp to the mean temperatures
+temp <- temp_df$Mean #assigns variable to the mean temp in data
 temp <- as.numeric(temp)
 
 
@@ -78,38 +70,37 @@ ImapFuncNewJ = function(Tmin, Tmax, StartT){
   ## the Beacham & Murray Egg Development Model
   ## Predicts emergence timing of Chinook Salmon in Salmon River
   # Notes: Constants from 1990 paper, spawn date assumed August 1st
-    
-  #### NEEDS MODIFICATION FOR "BearValley..."
-    
+  
   development_func = function(Tp, a, b, c) {
 
-    # develop.time is the development time (in days)
+    # develop_time is the development time (in days)
     # Tp is mean daily temp;
 
     develop_time <- exp(log(a)+log((Tp-c)^b))
     
-    daily_develop <- (1/develop_time) #daily development rate
+    DailyDevelopment <- (1/develop_time) #daily development rate
         frame <- temp_df
-        frame$DailyDevelopment <- daily_develop
-        #### BearValleyElkCreekTemperaturedaily$dailydevelopment<-(1/develop.time) #daily development rate
+        frame$DailyDevelopment <- DailyDevelopment
 
     
     #define development period
 
     timetoemerge <- NULL
-    startspawn <- 2454680 #current in julian, set to august 1st, change format?
+    startspawn <- 2454680 #aug 1 2008, ordinal date
     endspawn <- startspawn + 40
   
     for (spawndate in startspawn:endspawn) {
     
-      DevelopmentPeriod <- subset(frame, #development period made a subset
-      Jdate >= spawndate & Jdate <= (startspawn+366)) #year set to count up to a year from spawning
+      DevelopmentPeriod <- subset(temp_df$Jdate, 
+                                   temp_df$Jdate <= spawndate & temp_df$Jdate <= (startspawn + 366))
+          ## DevelopmentPeriod is a vector with *just* ordinal dates
+      
+      TotalDevelopment <- cumsum(DailyDevelopment) 
+          ## total development = sum(dailydevelopment)
+
+      emerge <- min(which((cumsum(DailyDevelopment)) >= 1)) #once y = 1, it is emergence time
     
-      DevelopmentPeriod$TotalDevelopment <- cumsum(DevelopmentPeriod$DailyDevelopment) #total development = sum(dailydevelopment)
-    
-      y <- min(which((cumsum(DevelopmentPeriod$DailyDevelopment)) >= 1)) #once y hits 1 is emergence
-    
-      timetoemerge <- rbind(timetoemerge,y)
+      timetoemerge <- rbind(timetoemerge,emerge)
     }
 
   }
@@ -133,7 +124,7 @@ ImapFuncNewJ = function(Tmin, Tmax, StartT){
   imax = 100
   
   # Parameters for egg development rate
-    Tp <- BearValleyElkCreekTemperaturedaily$Temperature
+    Tp <- temp
     a_egg <- exp(10.404)
     b_egg <-- 2.043
     c_egg <-- 7.575
@@ -150,7 +141,7 @@ ImapFuncNewJ = function(Tmin, Tmax, StartT){
       ####################################
       
       # Step 2: Computing the development rate for eggs
-      Y2 = development.func(Tp = , a = a_egg, b = b_egg, c= c_egg)
+      Y2 = development.func(Tp = temp, a = a_egg, b = b_egg, c= c_egg)
 
     }
   
