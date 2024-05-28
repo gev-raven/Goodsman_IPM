@@ -38,27 +38,27 @@ temp <- as.numeric(temp)
   
   develop_time <- exp(log(a)+log((Tp-c)^b))
   
-  DailyDevelopment <- (1/develop_time) #daily development rate
-  frame <- temp_df
-  frame$DailyDevelopment <- DailyDevelopment
-  
-  
+  develop_df <- temp_df
+
+  develop_df$DailyDevelopment <- (1/develop_time) #daily development rate
+      
+
   #define development period
   
   timetoemerge <- NULL
-  startspawn <- 2454680 #aug 1 2008, ordinal date
+  startspawn <- 2456505 #aug 1, 2013 #aug 1 2008, ordinal date : 2454680
   endspawn <- startspawn + 40
   
   for (spawndate in startspawn:endspawn) {
     
-    DevelopmentPeriod <- subset(temp_df$Jdate, 
-                                temp_df$Jdate <= spawndate & temp_df$Jdate <= (startspawn + 366))
+    develop_df$DevelopmentPeriod <- subset(develop_df$Jdate, 
+                                develop_df$Jdate <= spawndate & temp_df$Jdate <= (startspawn + 366))
     ## DevelopmentPeriod is a vector with *just* ordinal dates
     
-    TotalDevelopment <- cumsum(DailyDevelopment) 
+    develop_df$TotalDevelopment <- cumsum(develop_df$DailyDevelopment) 
     ## total development = sum(dailydevelopment)
     
-    emerge <- min(which((cumsum(DailyDevelopment)) >= 1)) #once y = 1, it is emergence time
+    emerge <- min(which((cumsum(develop_df$DailyDevelopment)) >= 1)) #once y = 1, it is emergence time
       #in integration, warning: no non missing arguments
     
     timetoemerge <- rbind(timetoemerge,emerge)
@@ -67,7 +67,7 @@ temp <- as.numeric(temp)
 }
 
 
-### defining the parameters
+### defining the parameters -----
 
 # defining time step
 deltat = 1.0 #units are days
@@ -135,7 +135,7 @@ write.csv(IBM, "C:\\Users\\Grace.Veenstra\\Documents\\GitHub\\Goodsman_IPM\\Egg 
 graphics.off()
 plot(Eggs ~ times, type = 'l', ylim = c(0,100))
 
-plot(DailyDevelopment ~ times, type = 'l', ylim=c(0,100))
+plot(develop_df$DailyDevelopment ~ times, type = 'l', ylim=c(0,100))
 
 
 
