@@ -1,4 +1,11 @@
-# Workshopping the development function
+
+# This code creates a distribution of egg emergence days for Chinook salmon
+# based on the spawn date, with variance applied to the spawn date.
+# The development rate equation comes from Abbie, and from the Beacham and Murray Model
+
+# Temperature data is for Upper Middle Fork Salmon River at Marsh Creek.
+# Model assumes no egg mortality.
+
 
 ##############################################
 ###### Packages Set Up ----- 
@@ -82,31 +89,38 @@ spawndate_lower <- spawn_start - spawn_var #lower limit of spawn start range
 spawndate_upper <- spawn_start + spawn_var #upper limit of spawn start range
 spawnstart.range <- spawndate_lower:spawndate_upper
 
+i = 1
 develop_df <- temp_df
 emergence <- NULL
 
 
+## Iteration over Spawn Range
+
 for(i in 1:length(spawnstart.range)) { #runs loop for the range of spawning start dates
   
-  startspawn <- spawnstart.range[i]
-  endspawn <- startspawn + 40 
+  startspawn <- spawnstart.range[i] #start of spawning is somewhere in the spawn_start range
+  endspawn <- startspawn + 40 #define spawning window as 40 days
   
   for(spawndate in startspawn:endspawn) { #runs loop over the spawn window
     
     emergence[i] <- development_func(Tp = Tp, a = a, b = b, c = c, startspawn = startspawn)
+    #collects the emergence days into a vector
     
   }
 }
 
 
+## Graphing
 
 emergence
 
+mu1 = mean(emergence)
+sigma1 = sd(emergence)
+emerge_freq <- dnorm(x = develop_df$Jdate, mean = mu1, sd = sigma1)
+plot(emerge_freq, xlim=c(min(emergence), max(emergence)))
+  
+  ## so with a start date of aug 1 (213 julian), mean emergence is march 5 (430 julian)
+  ## this correct?
+
+
 plot(develop_df$TotalDevelopment ~ develop_df$Jdate, type='l', ylim=c(0,1))
-    
-plot(emergence)
-
-
-plot(DailyDevelopment ~ times, type='l')
-plot(TotalDevelopment ~ times, type='l', ylim=c(0,1))
-
