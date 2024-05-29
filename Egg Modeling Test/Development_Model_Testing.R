@@ -94,6 +94,8 @@ for(i in spawndate_lower:spawndate_upper) {
       
       emergence[i] = y
       
+      return(emergence)
+      
     }
 
   }
