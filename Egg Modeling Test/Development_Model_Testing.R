@@ -44,6 +44,29 @@ temp <- as.numeric(temp)
 ###### Development model -----
 ############################################
 
+development_func = function(Tp, a, b, c, startspawn) {
+  
+  # develop_time is the development time (in days)
+  # Tp is daily mean temperature
+  
+  develop_df <- temp_df
+  develop_time <- exp(log(a)+log((Tp-c)^b))
+  develop_df$DailyDevelopment <- (1/develop_time) #daily development rate
+  
+  #define development period
+  
+  develop_df <- subset(develop_df, 
+                       develop_df$Jdate >= startspawn & develop_df$Jdate <= (startspawn + 366))
+  ## restricts develop_df to the period of development
+  
+  develop_df$TotalDevelopment <- cumsum(develop_df$DailyDevelopment)
+  ## total development = sum of daily development
+  
+  y <- develop_df[min(which((develop_df$TotalDevelopment) >= 1)), "Jdate"] 
+  ## once development = 1, it is emergence time and we extract emergence date
+  
+  return(y)
+}
 
 ## Parameters
 
@@ -52,65 +75,36 @@ a <- exp(10.404)
 b <- -2.043
 c <- -7.575
 
-
 ## Spawn Start Range
 spawn_start <- 213 #aug 1; mean spawn start date
 spawn_var <- 5 #spawn start variance is 5 days
 spawndate_lower <- spawn_start - spawn_var #lower limit of spawn start range
 spawndate_upper <- spawn_start + spawn_var #upper limit of spawn start range
+spawnstart.range <- spawndate_lower:spawndate_upper
 
 develop_df <- temp_df
-i = spawndate_lower
 emergence <- NULL
 
 
-for(i in spawndate_lower:spawndate_upper) { 
+for(i in 1:length(spawnstart.range)) { #runs loop for the range of spawning start dates
   
-  s <- i
-  startspawn <- s
-  endspawn <- startspawn + 40
- 
-  development_func = function(Tp, a, b, c, startspawn, endspawn) {
+  startspawn <- spawnstart.range[i]
+  endspawn <- startspawn + 40 
+  
+  for(spawndate in startspawn:endspawn) { #runs loop over the spawn window
     
-    # develop_time is the development time (in days)
-    # Tp is daily mean temperature
+    emergence[i] <- development_func(Tp = Tp, a = a, b = b, c = c, startspawn = startspawn)
     
-    develop_df <- temp_df
-    develop_time <- exp(log(a)+log((Tp-c)^b))
-    develop_df$DailyDevelopment <- (1/develop_time) #daily development rate
-    
-    #define development period
-    
-    for (s in startspawn:endspawn) {
-      
-      develop_df <- subset(develop_df, 
-                           develop_df$Jdate >= startspawn & develop_df$Jdate <= (startspawn + 366))
-      ## restricts develop_df to the period of development
-      
-      develop_df$TotalDevelopment <- cumsum(develop_df$DailyDevelopment)
-      ## total development = sum of daily development
-      
-      y <- develop_df[min(which((develop_df$TotalDevelopment) >= 1)), "Jdate"] 
-      ## once development = 1, it is emergence time and we extract emergence date
-      
-      emergence[i] <- y
-      
-    }
   }
-  
-  i <- i + 1 #will count up for each iteration in the spawn_start range
-  
 }
-  
+
+
 
 emergence
 
 plot(develop_df$TotalDevelopment ~ develop_df$Jdate, type='l', ylim=c(0,1))
     
 plot(emergence)
-
-
-### the development function for temperature dependent egg development
 
 
 plot(DailyDevelopment ~ times, type='l')
