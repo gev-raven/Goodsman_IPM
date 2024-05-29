@@ -59,6 +59,7 @@ spawn_var <- 5 #spawn start variance is 5 days
 spawndate_lower <- spawn_start - spawn_var #lower limit of spawn start range
 spawndate_upper <- spawn_start + spawn_var #upper limit of spawn start range
 
+develop_df <- temp_df
 i = spawndate_lower
 emergence <- NULL
 
@@ -81,30 +82,27 @@ for(i in spawndate_lower:spawndate_upper) {
     #define development period
     
     for (s in startspawn:endspawn) {
-        
+      
       develop_df <- subset(develop_df, 
                            develop_df$Jdate >= startspawn & develop_df$Jdate <= (startspawn + 366))
-        ## restricts develop_df to the period of development
+      ## restricts develop_df to the period of development
       
       develop_df$TotalDevelopment <- cumsum(develop_df$DailyDevelopment)
-        ## total development = sum of daily development
+      ## total development = sum of daily development
       
       y <- develop_df[min(which((develop_df$TotalDevelopment) >= 1)), "Jdate"] 
-        ## once development = 1, it is emergence time and we extract emergence date
+      ## once development = 1, it is emergence time and we extract emergence date
       
-      emergence[i] = y
-      
-      return(emergence)
+      emergence[i] <- y
       
     }
-
   }
   
   i <- i + 1 #will count up for each iteration in the spawn_start range
   
 }
   
-development_func()
+
 emergence
 
 plot(develop_df$TotalDevelopment ~ develop_df$Jdate, type='l', ylim=c(0,1))
