@@ -1,5 +1,22 @@
 # Workshopping the development function
 
+##############################################
+###### Packages Set Up ----- 
+##############################################
+
+install.packages("lubridate")
+library(lubridate)
+install.packages("anytime")
+library(anytime)
+install.packages("tidyverse")
+library(tidyverse)
+install.packages("dbplyr")
+library(dbplyr)
+install.packages("dplyr")
+library(dplyr)
+install.packages("dtplyr")
+library(dtplyr)
+
 
 ##############################################
 
@@ -8,12 +25,10 @@ temp_df <- read.csv("C:\\Users\\Grace.Veenstra\\Documents\\GitHub\\Goodsman_IPM\
                     header=TRUE) #takes csv file and creates dataframe
 temp_df <- temp_df[c("Date","HUC_10","Mean")] #removes 'min' 'max' and 'HUC_8' columns from frame
 temp_df <- temp_df[which(temp_df$HUC_10 %in% "1706020503"),] #filters to only include Marsh Creek ("1706020503" is creek identifier)
+temp_df$Date <- parse_date_time(temp_df$Date, orders=c('mdy','ymd')) #reads different date formats
 temp_df$Date <- format.Date(temp_df$Date, format="%Y-%m-%d")
 temp_df$Ydate <- yday(temp_df$Date) #convert date to 'day of year' (value 1 to 365)
-temp_df$Jdate <- temp_df$Date
-
-#temp_df$Jdate <- as.numeric(as.Date(temp_df$Jdate, origin="1993-01-01")) #converts date to 'days since 1993-1-1'
-### still trying to figure out ordinal
+temp_df$Jdate <- 1:nrow(temp_df) #sets multi-year 'julian' values
 
 temp <- temp_df$Mean #assigns variable to the mean temp in data
 temp <- as.numeric(temp)
@@ -53,8 +68,8 @@ for(i in spawndate_lower:spawndate_upper) {
       
   for (s in startspawn:endspawn) {
         
-    DevelopmentPeriod <- subset(temp_df$Ydate, 
-                                temp_df$Ydate >= spawndate & temp_df$Ydate <= (startspawn + 366))
+    DevelopmentPeriod <- subset(temp_df$Jdate, 
+                                temp_df$Jdate >= spawndate & temp_df$Jdate <= (startspawn + 366))
       ## DevelopmentPeriod is a vector with *just* ordinal dates
         
     TotalDevelopment <- cumsum(DailyDevelopment)
@@ -65,10 +80,10 @@ for(i in spawndate_lower:spawndate_upper) {
         
     timetoemerge <- rbind(timetoemerge, y)
         
-        return(TotalDevelopment)
-        return(DevelopmentPeriod)
-        return(y)
-      }
+    return(TotalDevelopment)
+    return(DevelopmentPeriod)
+    return(y)
+    }
       
     }
     
