@@ -121,4 +121,6 @@ num.spawn.day
 emerge.time <- rep(emergence, num.spawn.day) #sets emergence days to the number of spawners per spawn day
 hist(emerge.time)
 
+qqnorm(emerge.time)
+qqline(emerge.time)
 
