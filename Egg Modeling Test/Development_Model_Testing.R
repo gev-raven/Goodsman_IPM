@@ -77,26 +77,26 @@ development_func = function(Tp, a, b, c, startspawn) {
 }
 
 ## Parameters
-
 Tp <- temp
 a <- exp(10.404)
 b <- -2.043
 c <- -7.575
 
-
-## Spawn Distribution
+## Spawning Distribution
 spawn_mean <- 230 #aug 18; mean spawn start date
 spawn_sd <- 5 #spawning date standard deviation
 n.spawners <- 10000 #number of spawning fish
-spawn_dist <- rnorm(n = n.spawners, mean = spawn_mean, sd = spawn_sd)
+spawn_dist <- rnorm(n = n.spawners, mean = spawn_mean, sd = spawn_sd) 
+            #creates normal distribution of spawners
 spawn_dist <- round(spawn_dist)
 hist(spawn_dist)
 
-## Spawn Start Range
-spawndate_lower <- min(spawn_dist) #lower limit of spawn start range
-spawndate_upper <- max(spawn_dist) #upper limit of spawn start range
+## Spawn Window
+spawndate_lower <- min(spawn_dist) #lower limit of spawn window
+spawndate_upper <- max(spawn_dist) #upper limit of spawn window
 spawn.window <- spawndate_lower:spawndate_upper
 
+## Initalizing
 develop_df <- temp_df
 emergence <- NULL
 i = 1
@@ -114,13 +114,42 @@ for(i in 1:length(spawn.window)) { #runs loop for each day in spawning window
 
 
 ## Emergence
-num.spawn.day <- as.vector(table(spawn_dist)) 
-    #turns the spawning distribution to vector of number of spawns per day
-num.spawn.day
+freq.spawn <- as.vector(table(spawn_dist)) 
+    #turns spawning distribution into vector of number of spawns per day
+freq.spawn
 
-emerge.time <- rep(emergence, num.spawn.day) #sets emergence days to the number of spawners per spawn day
-hist(emerge.time)
+emerge.day <- rep(emergence, freq.spawn) 
+    #repeats a given emergence day by the number of spawns on the associated spawn day
+freq.emerge <- as.vector(table(emerge.day))
+    #creates a vector that lists the number of fish emerging on a given day
+emerge.window <- min(emerge.day):max(emerge.day)
+    #window of emergence days
+hist(emerge.day) #histogram displaying number of fish emerging on a given day
 
-qqnorm(emerge.time)
-qqline(emerge.time)
+adults <- n.spawners - cumsum(freq.spawn) #looks at decline of spawners
+plot(adults ~ spawn.window)
+eggs <- 10000 - cumsum(freq.emerge) #tracks the decline of 'eggs' as they transition to 'emerged'
+plot(eggs ~ emerge.window)
+plot(eggs)
+
+
+## qqnorm
+
+qqnorm(emerge.day)
+qqline(emerge.day)
+
+
+## Graphing
+
+spawn_df <- temp_df
+spawn_df <- subset(temp_df, min(spawn_dist) <= temp_df$Jdate 
+                   & temp_df$Jdate <= max(emergence)) #attempting a development window
+
+times = 1:temp_df$Jdate
+
+plot(develop_df$TotalDevelopment ~ develop_df$Jdate, ylim=c(0,1))
+plot(develop_df$DailyDevelopment ~ develop_df$Mean)
+
+plot(emergence ~ temp)
+plot(emergence ~ spawn_df$Mean)
 
