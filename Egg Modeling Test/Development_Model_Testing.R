@@ -83,45 +83,42 @@ a <- exp(10.404)
 b <- -2.043
 c <- -7.575
 
-## Spawn Start Range
-spawn_start <- 213 #aug 1; mean spawn start date
-spawn_var <- 5 #spawn start variance is 5 days
-spawndate_lower <- spawn_start - spawn_var #lower limit of spawn start range
-spawndate_upper <- spawn_start + spawn_var #upper limit of spawn start range
-spawnstart.range <- spawndate_lower:spawndate_upper
 
-i = 1
+## Spawn Distribution
+spawn_mean <- 230 #aug 18; mean spawn start date
+spawn_sd <- 5 #spawning date standard deviation
+n.spawners <- 10000 #number of spawning fish
+spawn_dist <- rnorm(n = n.spawners, mean = spawn_mean, sd = spawn_sd)
+spawn_dist <- round(spawn_dist)
+hist(spawn_dist)
+
+## Spawn Start Range
+spawndate_lower <- min(spawn_dist) #lower limit of spawn start range
+spawndate_upper <- max(spawn_dist) #upper limit of spawn start range
+spawn.window <- spawndate_lower:spawndate_upper
+
 develop_df <- temp_df
 emergence <- NULL
-
+i = 1
 
 ## Iteration over Spawn Range
 
-for(i in 1:length(spawnstart.range)) { #runs loop for the range of spawning start dates
+for(i in 1:length(spawn.window)) { #runs loop for each day in spawning window
   
-  startspawn <- spawnstart.range[i] #start of spawning is somewhere in the spawn_start range
-  endspawn <- startspawn + 40 #define spawning window as 40 days
+  startspawn <- spawn.window[i] #set spawning start as day in spawn window
   
-  for(spawndate in startspawn:endspawn) { #runs loop over the spawn window
-    
-    emergence[i] <- development_func(Tp = Tp, a = a, b = b, c = c, startspawn = startspawn)
+  emergence[i] <- development_func(Tp = Tp, a = a, b = b, c = c, startspawn = startspawn)
     #collects the emergence days into a vector
     
-  }
 }
 
 
-## Graphing
+## Emergence
+num.spawn.day <- as.vector(table(spawn_dist)) 
+    #turns the spawning distribution to vector of number of spawns per day
+num.spawn.day
 
-emergence
-
-mu1 = mean(emergence)
-sigma1 = sd(emergence)
-emerge_freq <- dnorm(x = develop_df$Jdate, mean = mu1, sd = sigma1)
-plot(emerge_freq, xlim=c(min(emergence), max(emergence)))
-  
-  ## so with a start date of aug 1 (213 julian), mean emergence is march 5 (430 julian)
-  ## this correct?
+emerge.time <- rep(emergence, num.spawn.day) #sets emergence days to the number of spawners per spawn day
+hist(emerge.time)
 
 
-plot(develop_df$TotalDevelopment ~ develop_df$Jdate, type='l', ylim=c(0,1))
