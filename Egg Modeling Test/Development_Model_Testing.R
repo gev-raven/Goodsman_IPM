@@ -118,8 +118,6 @@ freq.spawn <- as.vector(table(spawn_dist, useNA = "always"))
     #turns spawning distribution into vector of number of spawns per day
 freq.spawn
 
-#### FIX ERROR: freq.spawn not always ~ with emergence
-
 emerge.day <- rep(emergence, freq.spawn) 
     #repeats a given emergence day by the number of spawns on the associated spawn day
 freq.emerge <- as.vector(table(emerge.day))
