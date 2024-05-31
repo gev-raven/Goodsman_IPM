@@ -114,9 +114,11 @@ for(i in 1:length(spawn.window)) { #runs loop for each day in spawning window
 
 
 ## Emergence
-freq.spawn <- as.vector(table(spawn_dist)) 
+freq.spawn <- as.vector(table(spawn_dist, useNA = "always")) 
     #turns spawning distribution into vector of number of spawns per day
 freq.spawn
+
+#### FIX ERROR: freq.spawn not always ~ with emergence
 
 emerge.day <- rep(emergence, freq.spawn) 
     #repeats a given emergence day by the number of spawns on the associated spawn day
@@ -129,6 +131,7 @@ hist(emerge.day) #histogram displaying number of fish emerging on a given day
 adults <- n.spawners - cumsum(freq.spawn) #looks at decline of spawners
 plot(adults ~ spawn.window)
 eggs <- 10000 - cumsum(freq.emerge) #tracks the decline of 'eggs' as they transition to 'emerged'
+
 plot(eggs ~ emerge.window)
 plot(eggs)
 
