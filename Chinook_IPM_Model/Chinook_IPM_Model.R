@@ -248,10 +248,10 @@ for(i in 1:length(temp)) {
     
   # Egg development rate
   
-  egg.rate = DevelopmentFunc(Tp = temp[i], a, b, c, startspawn = i)
+  egg.rate = DevelopmentFunc(Tp = temp[i], a, b, c, startspawn = i) #daily development rate
     DailyRate[i] = egg.rate
   
-  emergence[i] = EmergenceFunc(Tp, a, b, c, startspawn = i)
+  emergence[i] = EmergenceFunc(Tp, a, b, c, startspawn = i) #emergence day vector
 
   # To compute new juvenilles in next stage of time step, we collect those who were
   # already eggs in previous time step (Egg.B)
@@ -263,10 +263,11 @@ for(i in 1:length(temp)) {
     
     #Aging Kernel - k_i(b-a)
     mu1 = log(egg.rate*deltat)
-    egg.dist = LnormDist(x = avec, mulog = mu1, sigmalog = sigma1) #probability density dist
+    egg.dist = LnormDist(x = avec, mulog = mu1, sigmalog = sigma1) #probability density distribution of the development rate
     egg.dist = egg.dist/sum(egg.dist) # normalizing
       # egg.dist is the 'aging kernal' of the convolution
       # It represents the probability of aging from age 'f' to age 'g'
+      # Lisa: "adds noise"
     
     #Convolution = fft^-1[fft(Prev.Egg)*fft(egg.dist)]
     Egg.B = ConvolveFunc(x1 = PrevEgg, y1 = egg.dist, padsize = length(avec)) + NewEggsT1*egg.dist
