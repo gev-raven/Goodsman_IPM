@@ -5,8 +5,6 @@
 ###### Packages Set Up ----- 
 ##############################################
 
-install.packages("lubridate")
-library(lubridate)
 install.packages("anytime")
 library(anytime)
 install.packages("tidyverse")
@@ -17,6 +15,9 @@ install.packages("dplyr")
 library(dplyr)
 install.packages("dtplyr")
 library(dtplyr)
+install.packages("lubridate")
+library(lubridate)
+
 
 
 ##############################################
@@ -56,16 +57,16 @@ DevelopmentFunc = function(Tp, a, b, c, startspawn) {
   develop_df$DailyDevelopment <- (1/develop_time) #daily development rate
   
   #define development period
-  
+ 
   develop_df <- subset(develop_df, 
                        develop_df$Jdate >= startspawn & develop_df$Jdate <= (startspawn + 366))
   ## restricts develop_df to the period of development
   
   develop_df$TotalDevelopment <- cumsum(develop_df$DailyDevelopment)
-  ## total development = sum of daily development
+    ## total development = sum of daily development
   
   y <- develop_df[min(which((develop_df$TotalDevelopment) >= 1)), "Jdate"] 
-  ## once development = 1, it is emergence time and we extract emergence date
+    ## once development = 1, it is emergence time and we extract emergence date
   
   return(develop_rate)
   
@@ -78,20 +79,28 @@ EmergenceFunc = function(Tp, a, b, c, startspawn) {
   
   develop_df <- temp_df
   develop_time <- exp(log(a)+log((Tp-c)^b))
-  develop_rate <- (1/develop_time)
   develop_df$DailyDevelopment <- (1/develop_time) #daily development rate
   
-  #define development period
+  if(startspawn %in% spawn.window) {
   
-  develop_df <- subset(develop_df, 
-                       develop_df$Jdate >= startspawn & develop_df$Jdate <= (startspawn + 366))
-  ## restricts develop_df to the period of development
-  
-  develop_df$TotalDevelopment <- cumsum(develop_df$DailyDevelopment)
-  ## total development = sum of daily development
-  
-  y <- develop_df[min(which((develop_df$TotalDevelopment) >= 1)), "Jdate"] 
-  ## once development = 1, it is emergence time and we extract emergence date
+    develop_df <- subset(develop_df, 
+                         develop_df$Jdate >= startspawn & develop_df$Jdate <= (startspawn + 366))
+      ## restricts develop_df to the period of development
+    
+    develop_df$TotalDevelopment <- cumsum(develop_df$DailyDevelopment)
+      ## total development = sum of daily development
+    
+    y <- develop_df[min(which((develop_df$TotalDevelopment) >= 1)), "Jdate"] 
+      ## once development = 1, it is emergence time and we extract emergence date
+    
+    return(y)
+    
+  }else{
+    
+    y = 0
+    
+    return(y)
+  }
   
   return(y)
   
@@ -121,7 +130,8 @@ ConvolveFunc = function(x1, y1, padsize) {
   Convolution2 = Convolution1[1:length(x1)]
   
   #Add in individuals that developd beyond next threshold
-  Convolution2[length(x1)] = Convolution2[length(x1)] + sum(Convolution1[(length(x1)+1):length(x2)])
+  Convolution2[length(x1)] = Convolution2[length(x1)] + 
+    sum(Convolution1[(length(x1)+1):length(x2)])
   
   return(Convolution2)
   
@@ -202,11 +212,10 @@ PrevJuv = rep(0,length(avec))
 NewJuv = rep(0,length(avec))
 NewJuvT1 = 0.0
 
-
+# Assorted
 develop_df <- temp_df
 emergence <- NULL
-i = spawndate_lower
-
+DailyRate <- rep(0,length(temp))
 
 ###### Iteration -----
 ############################################
@@ -218,14 +227,15 @@ for(i in 1:length(temp)) {
   
   ## Setting up 'fecundity'
   if(i %in% spawn.window){
-    startspawn <- i #sets spawning date as current day in spawn window
-    num.spawn <<- spawn_df[which(spawn_df$Jdate == i), "SpawnFreq"] 
+    num.spawn <- spawn_df[which(spawn_df$Jdate == i), "SpawnFreq"] 
       #gets number of fish spawning at time step i
+      #num.spawn not found outside this
   
     Fec[i] = 50
       # Fecundity is number of eggs each fish produces (say, 50)
     
   } else {
+    num.spawn = 0
     Fec[i] = 0
   }
   
@@ -237,11 +247,12 @@ for(i in 1:length(temp)) {
   NewEggs = num.spawn*Fec[i]
     
   # Egg development rate
-  egg.rate = DevelopmentFunc(Tp = temp[i], a, b, c, startspawn)
-    
-  emergence[i] = EmergenceFunc(Tp = temp[i], a, b, c, startspawn)
-    #collects the emergence days into a vector
   
+  egg.rate = DevelopmentFunc(Tp = temp[i], a, b, c, startspawn = i)
+    DailyRate[i] = egg.rate
+  
+  emergence[i] = EmergenceFunc(Tp, a, b, c, startspawn = i)
+
   # To compute new juvenilles in next stage of time step, we collect those who were
   # already eggs in previous time step (Egg.B)
   PrevEgg = Egg.B
@@ -259,13 +270,19 @@ for(i in 1:length(temp)) {
     
     #Convolution = fft^-1[fft(Prev.Egg)*fft(egg.dist)]
     Egg.B = ConvolveFunc(x1 = PrevEgg, y1 = egg.dist, padsize = length(avec)) + NewEggsT1*egg.dist
+      ## Egg.B is distribution of individuals of age 'g' in stage x at time i
     NewEggsT1 = NewEggs
       # Egg.B is the prob. density distribution of individuals of age 'g'
       # who advanced from age 'f' in the current time step
 
     #Computing Total Number of Ind. Currently in Egg Stage in this time step
+    ### [Integral]
     Eggs[i] = sum(na.omit(Egg.B[1:128])) + NewEggs
   
+  } else{
+    Egg.B = PrevEgg
+    NewEggsT1 = NewEggsT1 + NewEggs
+    Eggs[i] = sum(na.omit(Egg.B[1:128])) + NewEggsT1
   }
   
   #### Juvenile Stage
@@ -273,17 +290,17 @@ for(i in 1:length(temp)) {
   PrevJuv = sum(PrevEgg[129:length(avec)], na.rm = T)
   NewJuv = sum(Egg.B[129:length(avec)], na.rm = T) - PrevJuv
   
-  
-  
 }
 
-times = 1:length(temp)
+Matrix1 = matrix(c(Fec, Eggs), nrow = 2, ncol=length(temp), byrow=TRUE)
+
+times = temp_df$Jdate
 hist(spawn_dist)
-hist(emergence)
 
 ## Emergence
 emergence[is.na(emergence)] <- 0
-emerge.day <- rep(emergence, spawn_df$SpawnFreq) 
+emergence2 <- emergence[! emergence %in% c('0')]
+emerge.day <- rep(emergence2, spawn_df$SpawnFreq) 
   #repeats a given emergence day by the number of spawns on the associated spawn day
 freq.emerge <- as.vector(table(emerge.day))
   #creates a vector that lists the number of fish emerging on a given day
@@ -291,8 +308,9 @@ emerge.window <- min(emerge.day):max(emerge.day)
   #window of emergence days
 hist(emerge.day) #histogram displaying number of fish emerging on a given day
 
-
-plot(temp ~ emergence)
+plot(emergence ~ times)
+plot(DailyRate ~ times)
+plot(cumsum(DailyRate) ~ times, ylim=c(0,1), xlim=c())
 plot(Eggs ~ times)
 plot(Eggs ~ temp)
 plot(NewJuv ~ times)
