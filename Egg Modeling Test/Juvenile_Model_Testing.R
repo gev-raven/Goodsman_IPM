@@ -5,7 +5,7 @@
 ##### Temperature -----
 
 ## Reading in the temperature data (in degrees C)
-temp_df <- read.csv("C:\\Users\\Grace.Veenstra\\Documents\\GitHub\\Goodsman_IPM\\Egg Modeling Test\\MarshCreek_Temp_2015-2016.csv",
+temp_df <- read.csv("Egg Modeling Test\\MarshCreek_Temp_2015-2017.csv",
                     header=TRUE) #takes csv file and creates dataframe
 temp_df <- temp_df[c("Date","HUC_10","Mean")] 
 #removes 'min' 'max' and 'HUC_8' columns from frame
@@ -18,7 +18,7 @@ temp_df$Date <- format.Date(temp_df$Date, format="%Y-%m-%d")
 temp_df$Ydate <- yday(temp_df$Date) 
 #convert date to 'day of year' (value 1 to 365)
 temp_df$Jdate <- 1:nrow(temp_df) 
-#sets multi-year 'julian' values (1-730+)
+#sets multi-year 'julian' values (1-1090+)
 
 temp <- temp_df$Mean #assigns variable to the mean temp in data
 temp <- as.numeric(temp)
@@ -148,6 +148,7 @@ for(i in 1:length(temp)) {
 times = temp_df$Jdate
 
 ### Emergence
+
 if(i > spawndate_lower) {
   emergence[is.na(emergence)] <- 0
   emergence2 <- emergence[! emergence %in% c('0')]
@@ -161,19 +162,58 @@ if(i > spawndate_lower) {
   hist(emerge.day) #histogram displaying number of fish emerging on a given day
 }
 
-###### Juvenile
+plot(DailyRate ~ times)
+plot(cumsum(DailyRate) ~ times, ylim=c(0,1), xlim=c(200,500))
+
+
+###### Juvenile Stage ------
 
 
 
 
 
 
-avg.temp <- 
+
+
+#Clean temperature data####
+ELK.temp$Site.name <- recode(ELK.temp$Site.name, "Bear Valley/Elk Creek" = "ELK")
+
+temp <- rbind(BVA.temp, CHO.temp, LAK.temp, MAR.temp, SFS.temp, ELK.temp) %>%
+  select(-Water.depth)
+temp$Observe.date <- str_sub(temp$Observe.date, end = -10)
+
+VAL.temp$Observe.date <- str_sub(VAL.temp$Observe.date, end = -6)
+VAL.temp <- select(VAL.temp, -Water.depth)
+
+temp <- rbind(temp, VAL.temp)
+temp$Observe.date <- as.Date(temp$Observe.date, format = "%m/%d/%Y")
+temp$year <- str_sub(temp$Observe.date, end = -7)
+temp$doy <- strftime(temp$Observe.date, format = "%j")
+temp$doy <- as.numeric(temp$doy)
+temp <- rename_(temp, "stream" = "Site.name")
+temp$stream <- recode(temp$stream,
+                      "Bear Valley/Elk Creek" = "BVA",
+                      "Cape Horn Creek" = "CHO",
+                      "Lake Creek" = "LAK",
+                      "Marsh Creek" = "MAR",
+                      "South Fork Salmon" = "SFS",
+                      "Valley Creek" = "VAL")
+
+
+#Calculate a daily avg temp by date and stream
+avg.temp <- temp %>%
+  group_by(Observe.date, stream) %>%
+  mutate(avg.daily.temp = mean(Temperature, na.rm = TRUE)) %>%
+  ungroup() %>%
+  distinct(Observe.date, .keep_all = TRUE) %>%
+  select(-Temperature) %>%
+  filter(doy >= 89 & doy <= 214)
+
+avg.temp
 
 #calculate size after once month, two months, and at August 1st using cumsum of daily development
 
 dailymodel <- avg.temp %>%
-  group_by(stream,year) %>%
   mutate(dailygrowth = 
            (0.00415*(avg.daily.temp-1.833)*(1-exp(0.315*(avg.daily.temp-24.918))*1^(-0.338)))) %>%
   mutate(totalgrowth214 = 
@@ -184,15 +224,15 @@ dailymodel <- avg.temp %>%
            lag(rollapply(dailygrowth, (60), sum, align = "left", fill=NA)))
 
 
-ggplot(data=filter(dailymodel, stream == "BVA", doy<150),  aes(x=doy))+aes(color=year)+
+ggplot(data = filter(dailymodel, stream == "BVA", doy<150),  aes(x=doy)) + aes(color=year) +
   geom_line(aes(y=totalgrowthmonth)) + 
   geom_line(aes(y=totalgrowth2month)) +
   geom_line(aes(y=totalgrowth214)) +
   ggtitle("Size after one month for Different Emergence DOY and Years Bear Valley Creek") +
   xlab("Day of Year") + ylab("Size")
 
-ggplot(data=filter(dailymodel, stream=="BVA", doy<150),  aes(x=doy))+aes(color=year)+
-  geom_line(aes(y=totalgrowth300))+
+ggplot(data = filter(dailymodel, stream=="BVA", doy<150),  aes(x=doy)) + aes(color=year) +
+  geom_line(aes(y=totalgrowth300)) +
   ggtitle("Size at DOY 300 for Different Emergence DOY and Years Bear Valley Creek") +
   xlab("Day of Year") + ylab("Size")
 
@@ -209,19 +249,19 @@ new <- avg.temp %>%
   distinct(Observe.date, .keep_all = TRUE)
 
 
-temperaturespostemergence <- filter(new,doy>=90 & doy<=170)
+temperaturespostemergence <- filter(new,doy >= 90 & doy <= 170)
 T <- temperaturespostemergence$averagetempfornext30days
 v <- temperaturespostemergence$averagetempuntilAugust1st
 w <- temperaturespostemergence$averagetempfornext60days
 
 #Turn average temperatures over a time period into size of fish, after 30 days, 60 days, and on August 1st 
-temperaturespostemergence$sizeatemergence<- 35^2.953*0.00001432
+temperaturespostemergence$sizeatemergence <- 35^2.953*0.00001432
 temperaturespostemergence$size30dayslater = 
-  temperaturespostemergence$sizeatemergence+(0.00415*(T-1.833)*(1-exp(0.315*(T-24.918))*1^(-0.338)))*30
+  temperaturespostemergence$sizeatemergence + (0.00415*(T-1.833)*(1-exp(0.315*(T-24.918))*1^(-0.338)))*30
 temperaturespostemergence$size60dayslater = 
-  temperaturespostemergence$sizeatemergence+(0.00415*(w-1.833)*(1-exp(0.315*(w-24.918))*1^(-0.338)))*60
+  temperaturespostemergence$sizeatemergence + (0.00415*(w-1.833)*(1-exp(0.315*(w-24.918))*1^(-0.338)))*60
 temperaturespostemergence$sizeAugust1st = 
-  temperaturespostemergence$sizeatemergence+(0.00415*(v-1.833)*(1-exp(0.315*(v-24.918))*1^(-0.338)))*(214-temperaturespostemergence$doy)
+  temperaturespostemergence$sizeatemergence + (0.00415*(v-1.833)*(1-exp(0.315*(v-24.918))*1^(-0.338)))*(214-temperaturespostemergence$doy)
 
 ggplot(data=filter(temperaturespostemergence, stream=="BVA", doy<151),  aes(x=doy))+aes(color=year)+
   geom_line(aes(y=sizeAugust1st))+
