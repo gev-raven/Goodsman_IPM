@@ -96,6 +96,19 @@ spawndate_lower <- min(spawn_dist) #lower limit of spawn window
 spawndate_upper <- max(spawn_dist) #upper limit of spawn window
 spawn.window <- spawndate_lower:spawndate_upper
 
+## Spawning Frequency
+spawn_df <- data.frame(Date=temp_df$Date) #create 'spawn_df' data frame
+spawn_df$Jdate <- temp_df$Jdate
+spawn_df <- subset(spawn_df, spawndate_lower <= spawn_df$Jdate & spawn_df$Jdate <= spawndate_upper)
+#restricts spawn data frame only to the spawning window
+SpawnFreq <- as.data.frame(table(spawn_dist, useNA="always")); names(SpawnFreq) <- c("Jdate","SpawnFreq")
+#creates frame with number of spawns per day from spawning distribution
+spawn_df <- merge(spawn_df, SpawnFreq, by = "Jdate", all=T)
+#merges the 'SpawnFreq' dataframe with spawn_df based on the julian day
+spawn_df[is.na(spawn_df$SpawnFreq),"SpawnFreq"] <- 0; spawn_df <- na.omit(spawn_df)
+#sets 'NA' values of 'number of spawners' to zero
+
+
 ## Initalizing
 develop_df <- temp_df
 emergence <- NULL
@@ -114,17 +127,16 @@ for(i in 1:length(spawn.window)) { #runs loop for each day in spawning window
 
 
 ## Emergence
-freq.spawn <- as.vector(table(spawn_dist, useNA = "always")) 
-    #turns spawning distribution into vector of number of spawns per day
-freq.spawn
+emergence
 
-emerge.day <- rep(emergence, freq.spawn) 
+emerge.day <- rep(emergence, spawn_df$SpawnFreq) 
     #repeats a given emergence day by the number of spawns on the associated spawn day
 freq.emerge <- as.vector(table(emerge.day))
     #creates a vector that lists the number of fish emerging on a given day
 emerge.window <- min(emerge.day):max(emerge.day)
     #window of emergence days
 hist(emerge.day) #histogram displaying number of fish emerging on a given day
+
 
 adults <- n.spawners - cumsum(freq.spawn) #looks at decline of spawners
 plot(adults ~ spawn.window)

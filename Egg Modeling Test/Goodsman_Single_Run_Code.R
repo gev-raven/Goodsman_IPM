@@ -1,5 +1,10 @@
 
 
+# setting up the domain in physiological age
+avec = seq(1e-20, 2, length.out = 2^8) # domain for the larval stage
+da = avec[3] - avec[2]
+
+
 ## TEMP ----
 
 Tmin = read.csv("C:/Users/Grace.Veenstra/Downloads/ece33590-sup-0004-supinfo/JasperDailyMin2.csv", h = F)   # Min temp  
