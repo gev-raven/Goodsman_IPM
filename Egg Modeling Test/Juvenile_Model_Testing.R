@@ -25,20 +25,21 @@ library(zoo)
 ##### Temperature -----
 
 ## Reading in the temperature data (in degrees C)
-temp_df <- read.csv("Egg Modeling Test\\MarshCreek_Temp_2015-2016.csv",
-                    header=TRUE) #takes csv file and creates dataframe
+temp_df <- read.csv("C:\\Users\\Grace.Veenstra\\Documents\\GitHub\\Goodsman_IPM\\Egg Modeling Test\\MarshCreek_Temp_2015-2016.csv", 
+                    header=TRUE) 
+  #takes csv file and creates dataframe
 temp_df <- temp_df[c("Date","HUC_10","Mean")] 
-#removes 'min' 'max' and 'HUC_8' columns from frame
+  #removes 'min' 'max' and 'HUC_8' columns from frame
 temp_df <- temp_df[which(temp_df$HUC_10 %in% "1706020503"),] 
-#filters to only get Marsh Creek (Creek Identifier: "1706020503")
+  #filters to only get Marsh Creek (Creek Identifier: "1706020503")
 temp_df$Date <- parse_date_time(temp_df$Date, orders=c('mdy','ymd')) 
-#reads different date formats
+  #reads different date formats
 temp_df$Date <- format.Date(temp_df$Date, format="%Y-%m-%d")
-#sets the date format of Date list
+  #sets the date format of Date list
 temp_df$Ydate <- yday(temp_df$Date) 
-#convert date to 'day of year' (value 1 to 365)
+  #convert date to 'day of year' (value 1 to 365)
 temp_df$Jdate <- 1:nrow(temp_df) 
-#sets multi-year 'julian' values (1-1090+)
+  #sets multi-year 'julian' values (1-1090+)
 
 temp <- temp_df$Mean #assigns variable to the mean temp in data
 temp <- as.numeric(temp)
@@ -127,13 +128,15 @@ spawn.window <- spawndate_lower:spawndate_upper
 spawn_df <- data.frame(Date=temp_df$Date) #create 'spawn_df' data frame
 spawn_df$Jdate <- temp_df$Jdate
 spawn_df <- subset(spawn_df, spawndate_lower <= spawn_df$Jdate & spawn_df$Jdate <= spawndate_upper)
-#restricts spawn data frame only to the spawning window
+  #restricts spawn data frame only to the spawning window
 SpawnFreq <- as.data.frame(table(spawn_dist, useNA="always")); names(SpawnFreq) <- c("Jdate","SpawnFreq")
-#creates frame with number of spawns per day from spawning distribution
+  #creates frame with number of spawns per day from spawning distribution
 spawn_df <- merge(spawn_df, SpawnFreq, by = "Jdate", all=T)
-#merges the 'SpawnFreq' dataframe with spawn_df based on the julian day
+  #merges the 'SpawnFreq' dataframe with spawn_df based on the julian day
 spawn_df[is.na(spawn_df$SpawnFreq),"SpawnFreq"] <- 0; spawn_df <- na.omit(spawn_df)
-#sets 'NA' values of 'number of spawners' to zero
+  #sets 'NA' values of 'number of spawners' to zero
+spawn_df <- subset(spawn_df, min(which(spawn_df$SpawnFreq != 0)) | max(which(spawn_df$SpawnFreq != 0)))
+  #Cuts any stray leading / tailing zeroes that can cause issues when calculating emergence
 
 
 ###### Initializing -----
@@ -172,9 +175,9 @@ times = temp_df$Jdate
 
 if(i > spawndate_lower) {
   emergence[is.na(emergence)] <- 0
-  emergence2 <- emergence[! emergence %in% c('0')]
+  emergence <- emergence[! emergence %in% c('0')]
     #cutting emergence vector to correct size
-  emerge.day <- rep(emergence2, spawn_df$SpawnFreq) 
+  emerge.day <- rep(emergence, spawn_df$SpawnFreq) 
     #repeats a given emergence day by the number of spawns on the associated spawn day
   freq.emerge <- as.vector(table(emerge.day))
     #creates a vector that lists the number of fish emerging on a given day
@@ -187,155 +190,96 @@ plot(DailyRate ~ times)
 plot(cumsum(DailyRate) ~ times, ylim=c(0,1), xlim=c(200,500))
 
 
+
 ###### Juvenile Stage ------
 
 
-
-
-
-
-
-
-##### irrelevant -----
-
-###Clean temperature data
-
-#ELK.temp$Site.name <- recode(ELK.temp$Site.name, "Bear Valley/Elk Creek" = "ELK")
-
-#temp <- rbind(BVA.temp, CHO.temp, LAK.temp, MAR.temp, SFS.temp, ELK.temp) %>% select(-Water.depth)
-#temp$Observe.date <- str_sub(temp$Observe.date, end = -10)
-
-#VAL.temp$Observe.date <- str_sub(VAL.temp$Observe.date, end = -6)
-#VAL.temp <- select(VAL.temp, -Water.depth)
-
-#temp <- rbind(temp, VAL.temp)
-#temp$Observe.date <- as.Date(temp$Observe.date, format = "%m/%d/%Y")
-#temp$year <- str_sub(temp$Observe.date, end = -7)
-#temp$doy <- strftime(temp$Observe.date, format = "%j")
-#temp$doy <- as.numeric(temp$doy)
-#temp <- rename_(temp, "stream" = "Site.name")
-#temp$stream <- recode(temp$stream,
-                      #"Bear Valley/Elk Creek" = "BVA",
-                      #"Cape Horn Creek" = "CHO",
-                      #"Lake Creek" = "LAK",
-                      #"Marsh Creek" = "MAR",
-                      #"South Fork Salmon" = "SFS",
-                      #"Valley Creek" = "VAL")
-
-###Calculate a daily avg temp by date and stream
-#avg.temp <- temp %>%
-#  group_by(Observe.date, stream) %>%
-#  mutate(avg.daily.temp = mean(Temperature, na.rm = TRUE)) %>%
-#  ungroup() %>%
-#  distinct(Observe.date, .keep_all = TRUE) %>%
-#  select(-Temperature) %>%
-#  filter(doy >= 89 & doy <= 214)
-
-
-#calculate size after once month, two months, and at August 1st using cumsum of daily development
-
-#dailymodel<-avg.temp%>%
-#  group_by(stream,year) %>%
-#  mutate(totalgrowth214 = 
-#             lag(rollapply(dailygrowth, (214-doy), sum, align = "left", fill=NA)))%>%
-#  mutate(totalgrowth1month = 
-#           lag(rollapply(dailygrowth, (30), sum, align = "left", fill=NA))) %>%
-#  mutate(totalgrowth2month = 
-#           lag(rollapply(dailygrowth, (60), sum, align = "left", fill=NA)))
-
-
-#ggplot(data = filter(dailymodel, stream == "BVA", doy<150),  aes(x=doy)) + aes(color=year) +
-#  geom_line(aes(y=totalgrowthmonth)) + 
-#  geom_line(aes(y=totalgrowth2month)) +
-#  geom_line(aes(y=totalgrowth214)) +
-#  ggtitle("Size after one month for Different Emergence DOY and Years Bear Valley Creek") +
-#  xlab("Day of Year") + ylab("Size")
-
-#ggplot(data = filter(dailymodel, stream=="BVA", doy<150),  aes(x=doy)) + aes(color=year) +
-#  geom_line(aes(y=totalgrowth300)) +
-#  ggtitle("Size at DOY 300 for Different Emergence DOY and Years Bear Valley Creek") +
-#  xlab("Day of Year") + ylab("Size")
-
-
-#calculate average temperature over a time period of 30 days, 60 days, and at August 1st
-
-#new <- avg.temp %>%
-#  group_by(stream,year) %>%
-#  mutate(averagetempfornext30days = 
-#           lag(rollapply(avg.daily.temp, (30), mean, align = "left", fill=NA))) %>%
-#  mutate(averagetempfornext60days = 
-#           lag(rollapply(avg.daily.temp, (60), mean, align = "left", fill=NA))) %>%
-#  mutate(averagetempuntilAugust1st = 
-#           lag(rollapply(avg.daily.temp, (215-doy), mean, align = "left", fill=NA))) %>%
-#  distinct(Observe.date, .keep_all = TRUE)
-
-
-##### Temp stuff I want -------
-
-SizeFunc = function(Tp, a1, b1, c1, d1, e1, emergence2) {
+SizeFunc = function(a1, b1, c1, d1, e1, j, date) {
   
-  tem_df <- subset(temp_df, temp_df$Jdate >= min(emerge.day)) 
-  #restrict dataframe to only dates post-emergence
-  size_df <- subset(tem_df, size_df$Jdate <= date)
-  #size_df where we only want temp. dates between emergence and a given date
-  X <- size_df$Mean
+  #restrict data frame to only dates after our specified emergence date
+  size_df <- subset(temp_df, temp_df$Jdate >= j) 
+    
+  # restrict size_df to between emergence and a certain date
+  size_df <- subset(size_df, size_df$Jdate <= date)
   
-  size_at_emergence = 35^2.953*0.00001432
-  size_at_date <- size_at_emergence + (a1*(X-b1)*(1-exp(c1*(X-d1))*1^(e1)))*(date-emergence2[j])
+  size_at_emergence = 35^2.953*0.00001432 #emergence mass (size 35 mm)
   
-  juv_size[date] <- size_at_date
+  ###daily_juv_weight <- size_at_emergence + 
+  ###.6*(a1*(size_df$Mean-b1)*(1-exp(c1*(size_df$Mean-d1)))*1^(e1))*(size_df$Jdate - j)
+
+  #vector of juvenile mass up to specified date (in grams)
+  juv_weight <- (size_at_emergence^(e1) + .6*(a1*(size_df$Mean-b1)*(1-exp(c1*(size_df$Mean-d1))))*(e1)*(size_df$Jdate - j))^(1/e1)
   
-  return(juv_size)
+  juv_length <- ((juv_weight/0.00001432)^(1/2.953)) #juvenile length in mm
+  
+  #creates 'leading zeroes' until emergence day for matrix
+  size_fix <- rep(0, (j - min(emerge.day)))
+  juv_length1 <- c(size_fix, juv_length) 
+  
+  return(juv_length)
   
 } 
 
-Parameters:
-a1 <- 0.00415
-b1 <- 1.833
-c1 <- 0.315
-d1 <- 24.918
-e1 <- -0.338
+# Parameters for Juv Size
+a1 <- 0.00415 #a1 is Perry value d/100
+b1 <- 1.833 #T_L
+c1 <- 0.315 #g
+d1 <- 24.918 #T_U
+e1 <- 0.338 #b
 
-size_matrix <- matrix(, nrow=length(emerge.window), ncol=c(1,lngth(temp_df$Jdate)-min(emerge.day))) %>%
-      row.names(size_matrix) <- min(emerge.day):max(emerge.day) 
-      col.names(size_matrix) <- 1:length(temp_df$Jdate)-min(emerge.day)) 
-      # Size Matrix where rows are emergence day and columns are days since emergence
-      # Value in a given cell is the size of fish on a given day
-
+#initialize
+juv_size <- rep(0,length(emerge.window))
 j = min(emerge.day)
-date = min(emerge.day) 
 
-if(j %in% emerge.window) {
-  
-  for(date in length(temp_df)) {
+for(j in emergence) {
 
-    juv_size[date] = juvSizeFunc(Tp, a1, b1, c1, d1, e1, emergence2)
+  #extracts juvenile length on given data
+  juv_length <- SizeFunc(a1, b1, c1, d1, e1, j, date = 562)
+  
+  #writes the size on the given date for a particular emergence day
+  juv_size[j] <- tail(juv_length, n=1) 
+  
+}
 
-    
-    
-  }
+#Modeled emergence is not continuous, so need to remove NAs
+juv_size[is.na(juv_size)] <- 0 ; juv_size <- juv_size[! juv_size %in% c('0')]
+
+
+
+hist(juv_length)
+plot(juv_length)
+plot(juv_weight)
+size_matrix
+
+
+#Dataframing
+juv_size_df <- temp_df[c("Date", "Jdate")]
+juv_size_df <- subset(juv_size_df, juv_size_df$Jdate >= min(emerge.day))
+juv_size_df['Age'] <- row_number(juv_size_df)
+juv_size_df$Length <- juv_length
+
+##Make a Matrix
+# Creates matrix with the rows as the date of emergence, columns as date
+# and adds the juvenile size vector for a given emergence day on each loop
+if(j == min(emerge.day)) {
   
-  size_matrix <- replace()
+  size_matrix <- rbind((min(emerge.day):length(temp)), juv_size)
+  colnames(size_matrix) <- c(min(emerge.day):length(temp))
+  rownames(size_matrix) <- c("Julian Date", j)
   
-  #rbind
-  #have trailing / leading NAs, how to keep and stick?
-  #need to merge based on specific date...
+} else {
+  
+  size_matrix <- rbind(size_matrix, juv_size)
+  size_matrix <- size_matrix[rownames(size_matrix) != 'Julian Date',]
+  rownames(size_matrix)[(j-min(emerge.day)+1)] <- c(j)
   
 }
 
 
-#Turn average temperatures over a time period into size of fish, after 30 days, 60 days, and on August 1st 
-temp_postemergence$sizeatemergence <- 35^2.953*0.00001432
-temp_postemergence$size30dayslater = 
-  temp_postemergence$sizeatemergence + (0.00415*(T-1.833)*(1-exp(0.315*(T-24.918))*1^(-0.338)))*30
-temp_postemergence$size60dayslater = 
-  temp_postemergence$sizeatemergence + (0.00415*(w-1.833)*(1-exp(0.315*(w-24.918))*1^(-0.338)))*60
-temp_postemergence$sizeAugust1st = 
-  temp_postemergence$sizeatemergence + (0.00415*(v-1.833)*(1-exp(0.315*(v-24.918))*1^(-0.338)))*(214-temp_postemergence$doy)
+### Graphing
 
-#ggplot(data=filter(temperaturespostemergence, stream=="BVA", doy<151),  aes(x=doy))+aes(color=year)+
-#  geom_line(aes(y=sizeAugust1st))+
-#  geom_line(aes(y=size30dayslater))+
-#  ggtitle("Beacham Daily Development Bear Valley Creek") +
-#  xlab("Day of emergence") + ylab("Size")
-
+if(i > spawndate_lower) {
+  num.of.size <- rep(juv_size, freq.emerge) 
+    #replicates size-by-emergence by the number emerged on that day
+  hist(num.of.size) #histogram displaying number of fish emerging on a given day
+}
