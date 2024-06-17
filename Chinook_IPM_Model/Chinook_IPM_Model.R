@@ -18,7 +18,7 @@ library(dplyr)
 library(dtplyr)
 library(lubridate)
 
-
+###### Temperature Set-Up -----
 ##############################################
 
 ## Reading in the temperature data (in degrees C)
@@ -103,6 +103,55 @@ EmergenceFunc = function(Tp, a, b, c, startspawn) {
   
 }
 
+JuvGrowthFunc = function(Tp, a1, b1, c1, d1, e1) {
+  
+  #restrict data frame to only dates after our specified emergence date
+  #size_df <- subset(temp_df, temp_df$Jdate >= emergence) 
+  
+  # restrict size_df to between emergence and a certain date
+  #size_df <- subset(size_df, size_df$Jdate <= enddate)
+  
+  start_length = 35 #(size 35 mm)
+  emergence_weight = (start_length)^2.953*0.00001432 #emergence weight (grams) 
+  
+  omega <- (a1*(Tp-b1)*(1-exp(c1*(Tp-d1)))) #growth rate
+  #omega <- (a1*(size_df$Mean-b1)*(1-exp(c1*(size_df$Mean-d1)))) #growth rate
+  omega <- if_else(omega > 0, omega, 0) #growth rate can not be 'negative'
+  
+  growth <- omega*(1/100)*(e1) #growth in grams
+  
+  #growth.rate <- omega*(1/100)*(e1) #growth in grams
+  #growth.rate <- growth / 13 #percentage of growth to breakpoint (threshold is 13 grams)
+  
+  return(growth.rate)
+  
+}
+
+{
+  juv_weight <- rep(0,(date-j))
+  
+  for(k in 1:(date - j + 1)) { #(k in j:date)
+    if(k == 1) {
+      juv_weight[k] <- (emergence_weight^(e1) + omega[k]*(1/100)*e1)^(1/e1) 
+      
+      #juv weight in grams
+    }else{
+      juv_weight[k] <- (juv_weight[k-1]^(e1) + omega[k]*(1/100)*e1)^(1/e1) 
+      #juv weight in grams
+    }
+  }
+  
+  #juv_weight <- (emergence_weight^(e1) + omega*(1/100)*e1*[period])^(1/e1)
+  juv_length <- ((juv_weight/0.00001432)^(1/2.953)) #juvenile length in mm
+  
+  #creates 'leading zeroes' until emergence day for matrix
+  size_fix <- rep(0, (j - min(emerge.day)))
+  juv_length1 <- c(size_fix, juv_length) 
+  
+  return(juv_length)
+  
+}
+
 LnormDist = function(x, mulog, sigmalog) {
   
   y_log = 1/(x*sigmalog*sqrt(2*pi))*exp(-1/(2*sigmalog^2)*(log(x)-mulog)^2)
@@ -137,14 +186,13 @@ ConvolveFunc = function(x1, y1, padsize) {
 
 # avec is just 'a vector' which functions to set a domain or physiological age
 # by giving a vector against which to plot thresholds for life stages
-  #avec = seq(1e-20, 2, length.out = 2^8) # domain for the larval stage
   avec = seq(1e-20, 2, 0.001)
   da = avec[3] - avec[2]
   avec1 <- min(which(avec >= 1)) #this allows you to vary the length of avec and still index the right cell below
 
-# Figuring out where in the domain avec = 1 (upper breakpoint for egg stage)
-# which.min(abs(avec - 1))
-# avec[128] to avec[129]
+  avec2 = seq(1e-20, 24, 0.001) #beyond this is too long
+  da2 = avec2[3] - avec2[2]
+  avec3 <- min(which(avec2 >= 12))
 
 
 ##### Spawning Set-Up -----
@@ -186,7 +234,7 @@ spawn_df <- subset(spawn_df, min(which(spawn_df$SpawnFreq != 0)) | max(which(spa
 deltat = 1.0 # units are days
 
 ## Egg Development Model
-Tp <- temp
+Tp = temp
 a <- exp(10.404)
 b <- -2.043
 c <- -7.575
@@ -194,7 +242,17 @@ c <- -7.575
 ## Egg Stage
 sigma1 = 0.2
 
+## Juvenile Development Model
+a1 <- 0.415 #d
+b1 <- 1.833 #T_L
+c1 <- 0.315 #g
+d1 <- 24.918 #T_U
+e1 <- 0.338 #b
 
+## Juv Stage
+sigma2 = 0.1
+
+  
 ###### Initialization -----
 ############################################
 
@@ -203,6 +261,7 @@ Fec = rep(0,length(temp))
 Fec[1:spawndate_lower] = rep(total.spawners, spawndate_lower)
 Eggs = rep(0, length(temp))
 Juv = rep(0, length(temp))
+Smolt = rep(0, length(temp))
 
 # Initializing the previous time step eggs
 PrevEgg = rep(0,length(avec))
@@ -214,16 +273,27 @@ PrevJuv = rep(0,length(avec))
 NewJuv = rep(0,length(avec))
 NewJuvT1 = 0.0
 
+##
+PrevSmolt = rep(0, length(avec))
+NewSmolt = rep(0, length(avec))
+NewSmoltT1 = 0.0
+
+#Juv.Wt <- data.frame(matrix(ncol = length(temp), nrow = 0))
+#Juv.Lt <- data.frame(matrix(ncol = length(temp), nrow = 0))
+PreJuvWeight = rep(0,length(avec2))
+JuvWeight = rep(0,length(avec2))
+
 # Assorted
 develop_df <- temp_df
 emergence <- NULL
 DailyRate <- rep(0,length(temp))
 
+
 ###### Iteration -----
 ############################################
 
 ptm <- proc.time()
-for(i in 1:length(temp)) {
+for(i in 1:560) { #length(temp)
  
   ##### Spawning ------
   #######################
@@ -295,17 +365,60 @@ for(i in 1:length(temp)) {
     Eggs[i] = sum(na.omit(Egg.B[1:(avec1-1)])) + NewEggsT1
   }
   
-  #### Juvenile Stage
+  #### Juvenile Stage -----
   
+  #Incoming Juvies
   PrevJuv = sum(PrevEgg[avec1:length(avec)], na.rm = T)
   NewJuv = sum(Egg.B[avec1:length(avec)], na.rm = T) - PrevJuv
+  if(NewJuv < 0.0) NewJuv = 0.0
   Juv[i] = sum(na.omit(PrevJuv[1:(avec1-1)])) + NewJuv
+  
+  # Juv Growth Rate 
+  juv.growth.rate <- JuvGrowthFunc(Tp = temp[i], a1, b1, c1, d1, e1)
+  
+  # To compute new weight in current time step, we collect weight in past time step
+  PreJuvWeight = (JuvWeight)^(e1)
+  
+  if(juv.growth.rate > da4) { #need to check smallest rate
+    
+    #Aging Kernel - k_i(b-a)
+    mu2 = log(juv.growth.rate*deltat)
+    juv.growth.dist = LnormDist(x = avec4, mulog = mu2, sigmalog = sigma2) #probability density distribution of the development rate
+    juv.growth.dist = juv.growth.dist/sum(juv.growth.dist) # normalizing
+    
+    #Convolution = fft^-1[fft(Prev.Egg)*fft(egg.dist)]
+    JuvWeight = ConvolveFunc(x1 = PreJuvWeight, y1 = juv.growth.dist, padsize = length(avec2)) + NewJuvT1*juv.growth.dist
+    JuvWeight = (abs(JuvWeight))^(1/e1) #abs correction bc some disributions return negative
+    NewJuvT1 = NewJuv
+    
+    #Computing Total Number of Ind. Currently in Egg Stage in this time step
+    ### [Integral]
+    #Juv.Lt[i] = sum(na.omit(JuvLength[1:(avec2.1-1)])) + NewJuv
+    #Juv.Wt[c(i)] = na.omit(JuvWeight[1:(avec2.1-1)])
+    #Juv.Lt[c(i)] = na.omit(JuvLength[1:(avec2.1-1)])
+    
+    
+  } else {
+    JuvWeight = PreJuvWeight
+    NewJuvT1 = NewJuvT1 + NewJuv
+    #Juv.Wt$[i] = na.omit(JuvWeight[1:(avec2.1-1)])
+    #Juv.Lt$[i] = na.omit(JuvLength[1:(avec2.1-1)])
+    #Juv[i] = sum(na.omit(OldJuv[1:(avec1-1)])) + NewJuvT1
+  }
+  
+  #### Smolts
+  
+  PrevSmolt = sum(PreJuvWeight[avec3:length(avec2)], na.rm = T)
+  NewSmolt = sum(JuvWeight[avec3:length(avec2)], na.rm = T) - PrevSmolt
+  if(NewSmolt < 0.0) NewSmolt = 0.0
+  Smolt[i] = sum(na.omit(PreJuvWeight[1:(avec3-1)])) + NewSmolt
   
 }
 proc.time() - ptm
 
 Matrix1 = matrix(c(Fec, Eggs, Juv), nrow = 3, ncol=length(temp), byrow=TRUE)
 
+#JuvLength <- ((JuvWeight/0.00001432)^(1/2.953)) #distribution of juv lengths (in mm) at this time step
 
 
 ## Emergence
@@ -328,6 +441,14 @@ times = temp_df$Jdate
 
 #plot(DailyRate ~ times)
 plot(Eggs ~ times)
-plot(Eggs, xlim=range(emerge.window))
+plot(Eggs, xlim=range(emerge.window), xlab="Date (Julian)", 
+     ylab="Number of Individuals as Eggs",
+     main="Marsh Creek 2016 Emergence Output 
+     from Integral Projection Model")
+plot(Juv ~ times)
 
+plot(round(diff(Juv)), xlim=range(emerge.window), ylim=c(0,max(round(diff(Juv)))),
+     ylab="Increase in Number of Juveniles",
+     xlab="Date (Julian)",
+     main="Emergence Distribution from IPM")
 
