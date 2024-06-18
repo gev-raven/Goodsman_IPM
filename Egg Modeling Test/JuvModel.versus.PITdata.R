@@ -1,6 +1,6 @@
 
 
-yy="2011"
+yy="2017"
 mod.typ="MARSS"
   mod.typ="(Aimee Model)"
   mod.typ="with WHTBIRD (Aimee Model)"
@@ -53,6 +53,19 @@ temp_df$Ydate <- yday(temp_df$Date)
 #temp <- temp_df$Mean #assigns variable to the mean temp in data
 #temp <- as.numeric(temp)
 
+temp_df2 <- read.csv("C:\\Users\\Grace.Veenstra\\Downloads\\whitebird_env2.csv", 
+                    header=TRUE)
+temp_df2 <- temp_df2[c("Date", "TMEAN")]
+colnames(temp_df2) <- c("Date", "Mean")
+temp_df2$Date <- parse_date_time(temp_df2$Date, orders=c('mdy','ymd')) 
+temp_df2$Date <- format.Date(temp_df2$Date, format="%Y-%m-%d")
+#temp_df2 <- temp_df2 %>% group_by(Date) %>% 
+#  mutate(Mean = (max(Temp)+min(Temp))/2) %>% 
+#  distinct(Date, .keep_all=TRUE)
+temp_df2$Ydate <- yday(temp_df2$Date)
+#temp <- temp_df$Mean #assigns variable to the mean temp in data
+#temp <- as.numeric(temp)
+
 
 #### GROWTH
 #growth_df <- read.csv("C:\\Users\\Grace.Veenstra\\Documents\\GitHub\\Goodsman_IPM\\Data\\Wild Chinook recaps_growth data all years.csv", header=TRUE) 
@@ -88,12 +101,12 @@ for(i in 1:nrow(growth_df)) {
   start_weight = ind.fish$Mark.Weight.g
   #date <- subset(temp_df$Jdate, temp_df$Jdate > j)
   
-  #divide.date <- parse_date_time("Oct 1 2017", c("mdy", "ydm"))
-  #Tp1 <- subset(temp_df$Mean, temp_df$Date >= ind.fish$Mark.Date & temp_df$Date < divide.date)
-  #Tp2 <- subset(temp_df2$Mean, temp_df2$Date >= divide.date & temp_df2$Date <= ind.fish$Recap.Date)
-  #temp <- c(Tp1, Tp2)
+  divide.date <- parse_date_time("Oct 1 2017", c("mdy", "ydm"))
+  Tp1 <- subset(temp_df$Mean, temp_df$Date >= ind.fish$Mark.Date & temp_df$Date < divide.date)
+  Tp2 <- subset(temp_df2$Mean, temp_df2$Date >= divide.date & temp_df2$Date <= ind.fish$Recap.Date)
+  temp <- c(Tp1, Tp2)
   
-  temp <- subset(temp_df$Mean, temp_df$Date >= ind.fish$Mark.Date & temp_df$Date <= ind.fish$Recap.Date)
+  #temp <- subset(temp_df$Mean, temp_df$Date >= ind.fish$Mark.Date & temp_df$Date <= ind.fish$Recap.Date)
   
   juv_weight <- rep(0,(r-j))
   omega <- (a1*(temp-b1)*(1-exp(c1*(temp-d1)))) #growth rate
