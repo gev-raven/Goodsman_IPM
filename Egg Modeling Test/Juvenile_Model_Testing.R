@@ -1,6 +1,19 @@
 ### Working on Perry + Juvenile
 
 
+TempFile_1 = "C:\\Users\\Grace.Veenstra\\Documents\\GitHub\\Goodsman_IPM\\Egg Modeling Test\\MarshCreek_Temp_2015-2018.csv"
+StreamIdentifier_1 = "1706020503"
+StreamName_1 = "Marsh Creek"
+StreamNameAbb_1 = "MAR"
+
+TempFile_2 = "C:\\Users\\Grace.Veenstra\\Documents\\GitHub\\Goodsman_IPM\\Egg Modeling Test\\MarshCreek_Temp_2015-2018.csv"
+StreamIdentifier_2 = "1706020503"
+StreamName_2 = "Marsh Creek"
+StreamNameAbb_2 = "MAR"
+
+StartYear = ""
+TempModelType = "MARSS" #"Aimee"
+
 ##### Packages Set Up -----
 
 # install.packages("anytime")
@@ -25,12 +38,11 @@ library(zoo)
 ##### Temperature -----
 
 ## Reading in the temperature data (in degrees C)
-temp_df <- read.csv("C:\\Users\\Grace.Veenstra\\Documents\\GitHub\\Goodsman_IPM\\Egg Modeling Test\\MarshCreek_Temp_2015-2018.csv", 
-                    header=TRUE) 
+temp_df <- read.csv(paste(TempFile), header=TRUE) 
   #takes csv file and creates dataframe
 temp_df <- temp_df[c("Date","HUC_10","Mean")] 
   #removes 'min' 'max' and 'HUC_8' columns from frame
-temp_df <- temp_df[which(temp_df$HUC_10 %in% "1706020503"),] 
+temp_df <- temp_df[which(temp_df$HUC_10 %in% paste(StreamIdentifier)),] 
   #filters to only get Marsh Creek (Creek Identifier: "1706020503")
 temp_df$Date <- parse_date_time(temp_df$Date, orders=c('mdy','ymd')) 
   #reads different date formats
@@ -192,9 +204,6 @@ if(i > spawndate_lower) {
     #window of emergence days
   hist(emerge.day) #histogram displaying number of fish emerging on a given day
 }
-
-#plot(DailyRate ~ times)
-#plot(cumsum(DailyRate) ~ times, ylim=c(0,1), xlim=c(200,500))
 
 
 ###### Juvenile Stage ------

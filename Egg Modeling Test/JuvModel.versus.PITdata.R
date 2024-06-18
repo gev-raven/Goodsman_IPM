@@ -1,10 +1,25 @@
 
 
-yy="2017"
-mod.typ="MARSS"
-  mod.typ="(Aimee Model)"
-  mod.typ="with WHTBIRD (Aimee Model)"
+TempFile_1 = "C:\\Users\\Grace.Veenstra\\Documents\\GitHub\\Goodsman_IPM\\Data\\UpperMFSalmon_TempModel_EntireTimeSeries.csv"
+HUC10_1 = "X1706020503"
+StreamName_1 = "Marsh Creek"
+StreamNameAbb_1 = "MAR"
 
+TempFile_2 = "C:\\Users\\Grace.Veenstra\\Documents\\GitHub\\Goodsman_IPM\\Data\\LowerSalmon_TempModel_EntireTimeSeries.csv"
+HUC10_2 = "X1706020906"
+StreamName_2 = "White Bird Creek"
+StreamNameAbb_2 = "MAR"
+
+GrowthFile = "C:\\Users\\Grace.Veenstra\\Documents\\GitHub\\Goodsman_IPM\\Data\\Wild Chinook recaps_growth data all years.csv"
+GrowthStream = "Marsh Creek"
+
+StartYear = "2017"
+TempModelType = "Aimee"
+  TempModelType = "MARSS" 
+TempModelStreams = "(Marsh)"
+  TempModelStreams = "(Marsh/WhiteBird)"
+
+  
 #### TEMP (All - Annual)
 #temp_df <- read.csv("C:\\Users\\Grace.Veenstra\\Documents\\GitHub\\Goodsman_IPM\\Data\\TempModel_2003-2004.csv", header=TRUE) 
 temp_df <- read.csv("~\\GitHub\\Goodsman_IPM\\Data\\TempModel_2011-2012.csv", 
@@ -21,8 +36,7 @@ temp_df$Jdate <- 1:nrow(temp_df)
 
 
 #### TEMP 2 (Region - Entire Time Series)
-temp_df <- read.csv("~\\GitHub\\Goodsman_IPM\\Data\\UpperMFSalmon_TempModel_EntireTimeSeries.csv", 
-                    header=TRUE)
+temp_df <- read.csv(paste(TempFile_1), header=TRUE)
 temp_df <- temp_df[c("Date","X1706020503")] #Marsh Creek
 colnames(temp_df) <- c("Date", "Mean")
 temp_df$Date <- parse_date_time(temp_df$Date, orders=c('mdy','ymd')) 
@@ -30,8 +44,7 @@ temp_df$Date <- format.Date(temp_df$Date, format="%Y-%m-%d")
 temp_df$Ydate <- yday(temp_df$Date)
 #temp_df$Jdate <- 1:nrow(temp_df) #since 1990
 
-temp_df2 <- read.csv("~\\GitHub\\Goodsman_IPM\\Data\\LowerSalmon_TempModel_EntireTimeSeries.csv", 
-                    header=TRUE)
+temp_df2 <- read.csv(paste(TempFile_2), header=TRUE)
 temp_df2 <- temp_df2[c("Date","X1706020906")] #White Bird Creek
 colnames(temp_df2) <- c("Date", "Mean")
 temp_df2$Date <- parse_date_time(temp_df2$Date, orders=c('mdy','ymd')) 
@@ -68,13 +81,12 @@ temp_df2$Ydate <- yday(temp_df2$Date)
 
 
 #### GROWTH
-#growth_df <- read.csv("C:\\Users\\Grace.Veenstra\\Documents\\GitHub\\Goodsman_IPM\\Data\\Wild Chinook recaps_growth data all years.csv", header=TRUE) 
-growth_df <- read.csv("~\\GitHub\\Goodsman_IPM\\Data\\Wild Chinook recaps_growth data all years.csv", header=TRUE) 
-growth_df <- growth_df[which(growth_df$Release.Site.Name %in% "Marsh Creek"),]
+growth_df <- read.csv(paste(GrowthFile), header=TRUE) 
+growth_df <- growth_df[which(growth_df$Release.Site.Name %in% GrowthStream),]
       ## Change Stream Name
 growth_df$Mark.Date <- parse_date_time(growth_df$Mark.Date, orders=c('mdy','ymd')) 
 growth_df$Mark.Date <- format.Date(growth_df$Mark.Date, format="%Y-%m-%d")
-growth_df <- growth_df[grep(paste(yy), growth_df$Mark.Date),]
+growth_df <- growth_df[grep(paste(StartYear), growth_df$Mark.Date),]
       ## Change Year
 growth_df$Recap.Date <- parse_date_time(growth_df$Recap.Date, orders=c('mdy','ymd')) 
 growth_df$Recap.Date <- format.Date(growth_df$Recap.Date, format="%Y-%m-%d")
@@ -137,7 +149,7 @@ plot(model.recap.weight, type='l', mgp=c(2,.6,0), las=1,
             max(model.recap.weight, growth_df$Recap.Weight.g)),
      xlab="Individual Fish", ylab="Weight (g)", 
      main="Comparison of Model Weight versus Actual Weight", 
-     sub =paste("Marsh Creek",yy,mod.typ))
+     sub =paste(StreamName_1,StartYear,TempModelType,TempModelStreams))
 legend("topleft", legend=c("Modeled","Recapture"),lty=1,lwd=2,col=c(1,2),bty='n')
 lines(growth_df$Recap.Weight.g, col="red")
 x.axis <- seq(1,length(growth_df$Tag.Code),1)
@@ -152,7 +164,7 @@ plot(model.recap.length, type='l', mgp=c(2,.6,0), las=1,
             max(model.recap.length, growth_df$Recap.Length.mm)),
      xlab="Individual Fish", ylab="Length (mm)", 
      main="Comparison of Model Length versus Actual Length", 
-     sub = paste("Marsh Creek", yy, mod.typ))
+     sub = paste(StreamName_1,StartYear,TempModelType,TempModelStreams))
 legend("topleft", legend=c("Modeled","Recapture"),lty=1,lwd=2,col=c(1,2),bty='n')
 lines(growth_df$Recap.Length.mm, col="red")
 x.axis <- seq(1,length(growth_df$Tag.Code),1)
@@ -169,28 +181,28 @@ plot(model.recap.weight, growth_df$Recap.Weight.g,
      mgp=c(2,.6,0), las=1,
      xlab="Predicted Weight (Model)", ylab="Observed Weight (Recapture)",
      main="Predicted vs. Observed Weight",
-     sub=paste("Marsh Creek",yy,mod.typ))
+     sub=paste(StreamName_1,StartYear,TempModelType,TempModelStreams))
 abline(a=0,b=1)
 
 plot(sort(model.recap.weight), sort(growth_df$Recap.Weight.g),
      mgp=c(2,.6,0), las=1,
      xlab="Predicted Weight (Model)", ylab="Observed Weight (Recapture)",
      main="Quantile Predicted vs. Observed Weight",
-     sub=paste("Marsh Creek",yy,mod.typ))
+     sub=paste(StreamName_1,StartYear,TempModelType,TempModelStreams))
 abline(a=0,b=1)
 
 plot(model.recap.length, growth_df$Recap.Length.mm,
      mgp=c(2,.6,0), las=1,
      xlab="Predicted Length (Model)", ylab="Observed Length (Recapture)",
      main="Predicted vs. Observed Length",
-     sub=paste("Marsh Creek",yy,mod.typ))
+     sub=paste(StreamName_1,StartYear,TempModelType,TempModelStreams))
 abline(a=0,b=1)
 
 plot(sort(model.recap.length), sort(growth_df$Recap.Length.mm),
      mgp=c(2,.6,0), las=1,
      xlab="Predicted Length (Model)", ylab="Observed Length (Recapture)",
      main="Quantile Predicted vs. Observed Length",
-     sub=paste("Marsh Creek",yy,mod.typ))
+     sub=paste(StreamName_1,StartYear,TempModelType,TempModelStreams))
 abline(a=0,b=1)
 
 

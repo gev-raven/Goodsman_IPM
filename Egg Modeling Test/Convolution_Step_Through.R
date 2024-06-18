@@ -56,23 +56,27 @@ NewJuvT1 = 10
 
 juv.growth.dist
 
+i=1
 plot(avec2[1:20],JuvWeight[1:20],main=paste("growth_rate",growth_step),ylim=c(0,5))
 lines(avec2[1:20],juv.growth.dist[1:20],col="grey")
 
 JuvWeight = ConvolveFunc(x1 = PreJuvWeight, y1 = juv.growth.dist, padsize = length(avec2)) #+ NewEggsT1*egg.dist
-JuvWeight = abs((JuvWeight))^(3)
+#JuvWeight = abs((JuvWeight))^(3)
 lines(avec2[1:20],JuvWeight[1:20],col="red")
+i=i+1
 
-PreJuvWeight = (JuvWeight)^(e1)
+PreJuvWeight = (JuvWeight)#^(e1)
 JuvWeight = ConvolveFunc(x1 = PreJuvWeight, y1 = juv.growth.dist, padsize = length(avec2)) 
-JuvWeight = abs((JuvWeight))^(3) + NewJuvT1*juv.growth.dist
+#JuvWeight = abs((JuvWeight))^(3)
+JuvWeight = JuvWeight + NewJuvT1*juv.growth.dist
 lines(avec2[1:20],JuvWeight[1:20],col="green")
+i=i+1
 
-PreJuvWeight = (JuvWeight)^(e1)
+PreJuvWeight = (JuvWeight)#^(e1)
 JuvWeight = ConvolveFunc(x1 = PreJuvWeight, y1 = juv.growth.dist, padsize = length(avec2)) #+ NewEggsT1*egg.dist
-JuvWeight = abs((JuvWeight))^(3)
+#JuvWeight = abs((JuvWeight))^(3)
 lines(avec2[1:20],JuvWeight[1:20],col="blue")
-
+i=i+1
 
   
 
@@ -83,7 +87,7 @@ lines(avec2[1:20],JuvWeight[1:20],col="blue")
 
 
 
-#############
+############
 
 i=500
 omega <- JuvGrowthFunc(Tp=temp[i], a1, b1, c1, d1, e1)
