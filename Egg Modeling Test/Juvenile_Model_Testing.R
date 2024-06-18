@@ -59,14 +59,14 @@ DevelopmentFunc = function(Tp, a, b, c, startspawn) {
   
   #define development period
   
-  develop_df <- subset(develop_df, 
-                       develop_df$Jdate >= startspawn & develop_df$Jdate <= (startspawn + 366))
+  #develop_df <- subset(develop_df, 
+  #                     develop_df$Jdate >= startspawn & develop_df$Jdate <= (startspawn + 366))
   ## restricts develop_df to the period of development
   
-  develop_df$TotalDevelopment <- cumsum(develop_df$DailyDevelopment)
+  #develop_df$TotalDevelopment <- cumsum(develop_df$DailyDevelopment)
   ## total development = sum of daily development
   
-  y <- develop_df[min(which((develop_df$TotalDevelopment) >= 1)), "Jdate"] 
+  #y <- develop_df[min(which((develop_df$TotalDevelopment) >= 1)), "Jdate"] 
   ## once development = 1, it is emergence time and we extract emergence date
   
   return(develop_rate)
@@ -181,6 +181,13 @@ if(i > spawndate_lower) {
     #repeats a given emergence day by the number of spawns on the associated spawn day
   freq.emerge <- as.vector(table(emerge.day))
     #creates a vector that lists the number of fish emerging on a given day
+    #### NEEDS FIX
+    #### Need to preserve the zeros from spawnfreq -> emerge freq
+  
+  spawn_df$EmergeDay <- emergence
+  x <- cbind.data.frame(unique(emerge.day), freq.emerge); names(x)[1] <- c("EmergeDay")
+  spawn_df <- merge(spawn_df, x, by = "EmergeDay", all=T) ; spawn_df[is.na(spawn_df$freq.emerge),"freq.emerge"] <- 0
+  
   emerge.window <- min(emerge.day):max(emerge.day)
     #window of emergence days
   hist(emerge.day) #histogram displaying number of fish emerging on a given day
@@ -192,31 +199,6 @@ if(i > spawndate_lower) {
 
 ###### Juvenile Stage ------
 
-#omega corrected size func
-SizeFunc = function(a1, b1, c1, d1, e1, j, date) {
-  
-  #restrict data frame to only dates after our specified emergence date
-  size_df <- subset(temp_df, temp_df$Jdate >= j) 
-  
-  # restrict size_df to between emergence and a certain date
-  size_df <- subset(size_df, size_df$Jdate <= date)
-  
-  size_at_emergence = 35^2.953*0.00001432 #emergence mass (size 35 mm)
-  omega <- (a1*(size_df$Mean-b1)*(1-exp(c1*(size_df$Mean-d1)))) #growth rate
-    omega <- if_else(omega > 0, omega, 0) #growth rate can not be 'negative'
-  t <- size_df$Jdate - j #time period
-  
-  juv_weight <- (size_at_emergence^(e1) + 0.6*omega*(1/100)*e1*t)^(1/e1) #juv weight in grams
-  juv_length <- ((juv_weight/0.00001432)^(1/2.953)) #juvenile length in mm
-  
-  #creates 'leading zeroes' until emergence day for matrix
-  size_fix <- rep(0, (j - min(emerge.day)))
-  juv_length1 <- c(size_fix, juv_length) 
-  
-  return(juv_length)
-  
-} 
-
 SizeFunc = function(a1, b1, c1, d1, e1, j, date) {
   
   #restrict data frame to only dates after our specified emergence date
@@ -227,11 +209,14 @@ SizeFunc = function(a1, b1, c1, d1, e1, j, date) {
   
   emergence_weight = 35^2.953*0.00001432 #emergence mass (size 35 mm)
   omega <- (a1*(size_df$Mean-b1)*(1-exp(c1*(size_df$Mean-d1)))) #growth rate
-    omega <- if_else(omega > 0, omega, 0) #growth rate can not be 'negative'
-
+  omega <- if_else(omega > 0, omega, 0) #growth rate can not be 'negative'
+  
+  juv_weight <- rep(0,(date-j))
+  
   for(k in 1:(date - j + 1)) { #(k in j:date)
     if(k == 1) {
       juv_weight[k] <- (emergence_weight^(e1) + omega[k]*(1/100)*e1)^(1/e1) 
+       
         #juv weight in grams
     }else{
       juv_weight[k] <- (juv_weight[k-1]^(e1) + omega[k]*(1/100)*e1)^(1/e1) 
@@ -239,6 +224,7 @@ SizeFunc = function(a1, b1, c1, d1, e1, j, date) {
     }
   }
   
+  #juv_weight <- (emergence_weight^(e1) + omega*(1/100)*e1*[period])^(1/e1)
   juv_length <- ((juv_weight/0.00001432)^(1/2.953)) #juvenile length in mm
   
   #creates 'leading zeroes' until emergence day for matrix
@@ -248,7 +234,6 @@ SizeFunc = function(a1, b1, c1, d1, e1, j, date) {
   return(juv_length)
   
 } 
-
 
 # Parameters for Juv Size
 a1 <- 0.415 #d
@@ -277,15 +262,28 @@ for(j in emergence) {
 juv_size[is.na(juv_size)] <- 0 ; juv_size <- juv_size[! juv_size %in% c('0')]
 
 
-
 ### Graphing
 
 if(i > min(emergence)) {
-  spawn_df$SpawnFreq
-  size_dist <- rep(juv_size, freq.emerge) 
+  size_dist <- rep(juv_size, spawn_df$freq.emerge) 
   #replicates size-by-emergence by the number emerged on that day
-  hist(size_dist) #histogram displaying number of fish emerging on a given day
+  hist(size_dist) 
+  #histogram displaying number of fish emerging on a given day
 }
+
+hist(size_dist, xlim=c(50,58), xlab="Length", 
+     main="  Distribution of Marsh Creek 
+     Juvenile Lengths for July 16, 2016")
+
+hist(emerge.day, xlim=c(420,525), xlab="Day of Emergence",
+     main="   Distribution of Emergence Days
+     for Marsh Creek Spawning of 2016")
+
+hist(spawn_dist, xlim=c(210,250), xlab="Spawn Date", 
+     main="Distribution of Spawning Date 
+     for Marsh Creek, 2016")
+
+
 
 
 #Dataframing
@@ -293,8 +291,6 @@ juv_size_df <- temp_df[c("Date", "Jdate")]
 juv_size_df <- subset(juv_size_df, juv_size_df$Jdate >= min(emerge.day))
 juv_size_df['Age'] <- row_number(juv_size_df)
 juv_size_df$Length <- juv_length
-
-
 
 ##Make a Matrix
 # Creates matrix with the rows as the date of emergence, columns as date
