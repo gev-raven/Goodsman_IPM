@@ -1,26 +1,40 @@
 
 
-TempFile_1 = "C:\\Users\\Grace.Veenstra\\Documents\\GitHub\\Goodsman_IPM\\Data\\UpperMFSalmon_TempModel_EntireTimeSeries.csv"
+###### Set your files, pick your regime ~ -----
+
+#Stream_1 is what the fish start from (etc. spawn in Marsh, start from Marsh)
+#Stream_2 is a supplemental stream for additon
+
+TempFile_AimeeRegional_1 = "C:\\Users\\Grace.Veenstra\\Documents\\GitHub\\Goodsman_IPM\\Data\\UpperMFSalmon_TempModel_EntireTimeSeries.csv"
 HUC10_1 = "X1706020503"
 StreamName_1 = "Marsh Creek"
 StreamNameAbb_1 = "MAR"
+  
+TempSwitchDate = "Oct 1 2017" #date switch temp. data; will need to comment in/out relevant piece in for-loop
 
-TempFile_2 = "C:\\Users\\Grace.Veenstra\\Documents\\GitHub\\Goodsman_IPM\\Data\\LowerSalmon_TempModel_EntireTimeSeries.csv"
+TempFile_AimeeRegional_2 = "C:\\Users\\Grace.Veenstra\\Documents\\GitHub\\Goodsman_IPM\\Data\\LowerSalmon_TempModel_EntireTimeSeries.csv"
 HUC10_2 = "X1706020906"
 StreamName_2 = "White Bird Creek"
 StreamNameAbb_2 = "MAR"
+
+TempFile_MARSS_1 = "C:\\Users\\Grace.Veenstra\\Documents\\GitHub\\Goodsman_IPM\\Data\\Marsh_hourly_1993to2020.csv"
+TempFile_MARSS_2 = "C:\\Users\\Grace.Veenstra\\Downloads\\whitebird_env2.csv"
 
 GrowthFile = "C:\\Users\\Grace.Veenstra\\Documents\\GitHub\\Goodsman_IPM\\Data\\Wild Chinook recaps_growth data all years.csv"
 GrowthStream = "Marsh Creek"
 
 StartYear = "2017"
+#Choose ModelType and ModelStreams
 TempModelType = "Aimee"
   TempModelType = "MARSS" 
 TempModelStreams = "(Marsh)"
   TempModelStreams = "(Marsh/WhiteBird)"
 
   
-#### TEMP (All - Annual)
+##### TEMP CODING -----
+###########################
+  
+#### TEMP (All Annual)
 #temp_df <- read.csv("C:\\Users\\Grace.Veenstra\\Documents\\GitHub\\Goodsman_IPM\\Data\\TempModel_2003-2004.csv", header=TRUE) 
 temp_df <- read.csv("~\\GitHub\\Goodsman_IPM\\Data\\TempModel_2011-2012.csv", 
                     header=TRUE)
@@ -35,26 +49,27 @@ temp_df$Jdate <- 1:nrow(temp_df)
 #temp <- as.numeric(temp)
 
 
-#### TEMP 2 (Region - Entire Time Series)
-temp_df <- read.csv(paste(TempFile_1), header=TRUE)
-temp_df <- temp_df[c("Date","X1706020503")] #Marsh Creek
+#### TEMP 2 - AIMEE (Regional - Entire Time Series)
+temp_df <- read.csv(paste(TempFile_AimeeRegional_1), header=TRUE)
+temp_df <- temp_df[c("Date","X1706020503")] 
+                            #Marsh Creek
 colnames(temp_df) <- c("Date", "Mean")
 temp_df$Date <- parse_date_time(temp_df$Date, orders=c('mdy','ymd')) 
 temp_df$Date <- format.Date(temp_df$Date, format="%Y-%m-%d")
 temp_df$Ydate <- yday(temp_df$Date)
 #temp_df$Jdate <- 1:nrow(temp_df) #since 1990
 
-temp_df2 <- read.csv(paste(TempFile_2), header=TRUE)
-temp_df2 <- temp_df2[c("Date","X1706020906")] #White Bird Creek
+temp_df2 <- read.csv(paste(TempFile_AimeeRegional_2), header=TRUE)
+temp_df2 <- temp_df2[c("Date","X1706020906")] 
+                              #White Bird Creek
 colnames(temp_df2) <- c("Date", "Mean")
 temp_df2$Date <- parse_date_time(temp_df2$Date, orders=c('mdy','ymd')) 
 temp_df2$Date <- format.Date(temp_df2$Date, format="%Y-%m-%d")
 temp_df2$Ydate <- yday(temp_df2$Date)
 
 
-#### TEMP 3 (Stream - Observed Hourly)
-temp_df <- read.csv("~\\GitHub\\Goodsman_IPM\\Data\\Marsh_hourly_1993to2020.csv", 
-                    header=TRUE)
+#### TEMP 3 - MARSS
+temp_df <- read.csv(paste(TempFile_MARSS_1), header=TRUE) # SPECIFIC TO MARSH CREEK HORULY
 temp_df <- temp_df[c("Observe.date", "Temperature")]
 colnames(temp_df) <- c("Date", "Temp")
 temp_df$Date <- parse_date_time(temp_df$Date, orders=c('mdy HM','ymd HM')) 
@@ -63,11 +78,8 @@ temp_df <- temp_df %>% group_by(Date) %>%
   mutate(Mean = (max(Temp)+min(Temp))/2) %>% 
   distinct(Date, .keep_all=TRUE)
 temp_df$Ydate <- yday(temp_df$Date)
-#temp <- temp_df$Mean #assigns variable to the mean temp in data
-#temp <- as.numeric(temp)
 
-temp_df2 <- read.csv("C:\\Users\\Grace.Veenstra\\Downloads\\whitebird_env2.csv", 
-                    header=TRUE)
+temp_df2 <- read.csv(paste(TempFile_MARSS_2), header=TRUE) #SPECIFIC TO WHITEBIRD CSV
 temp_df2 <- temp_df2[c("Date", "TMEAN")]
 colnames(temp_df2) <- c("Date", "Mean")
 temp_df2$Date <- parse_date_time(temp_df2$Date, orders=c('mdy','ymd')) 
@@ -76,20 +88,19 @@ temp_df2$Date <- format.Date(temp_df2$Date, format="%Y-%m-%d")
 #  mutate(Mean = (max(Temp)+min(Temp))/2) %>% 
 #  distinct(Date, .keep_all=TRUE)
 temp_df2$Ydate <- yday(temp_df2$Date)
-#temp <- temp_df$Mean #assigns variable to the mean temp in data
-#temp <- as.numeric(temp)
 
 
 #### GROWTH
 growth_df <- read.csv(paste(GrowthFile), header=TRUE) 
 growth_df <- growth_df[which(growth_df$Release.Site.Name %in% GrowthStream),]
-      ## Change Stream Name
+                            ## Change Stream Name
 growth_df$Mark.Date <- parse_date_time(growth_df$Mark.Date, orders=c('mdy','ymd')) 
 growth_df$Mark.Date <- format.Date(growth_df$Mark.Date, format="%Y-%m-%d")
 growth_df <- growth_df[grep(paste(StartYear), growth_df$Mark.Date),]
-      ## Change Year
+                            ## Change Year
 growth_df$Recap.Date <- parse_date_time(growth_df$Recap.Date, orders=c('mdy','ymd')) 
 growth_df$Recap.Date <- format.Date(growth_df$Recap.Date, format="%Y-%m-%d")
+
 
 
 
@@ -113,11 +124,13 @@ for(i in 1:nrow(growth_df)) {
   start_weight = ind.fish$Mark.Weight.g
   #date <- subset(temp_df$Jdate, temp_df$Jdate > j)
   
-  divide.date <- parse_date_time("Oct 1 2017", c("mdy", "ydm"))
+  #If DOING TEMP DIVIDE, USE BELOW
+  divide.date <- parse_date_time(paste(TempSwitchDate), c("mdy", "ydm"))
   Tp1 <- subset(temp_df$Mean, temp_df$Date >= ind.fish$Mark.Date & temp_df$Date < divide.date)
   Tp2 <- subset(temp_df2$Mean, temp_df2$Date >= divide.date & temp_df2$Date <= ind.fish$Recap.Date)
   temp <- c(Tp1, Tp2)
   
+  #IF USING ONE TEMP FILE, USE BELOW
   #temp <- subset(temp_df$Mean, temp_df$Date >= ind.fish$Mark.Date & temp_df$Date <= ind.fish$Recap.Date)
   
   juv_weight <- rep(0,(r-j))
