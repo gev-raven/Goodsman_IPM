@@ -46,6 +46,7 @@
 # nine life stages (9 rows and 443 columns). 
 # Note also that for this version, Tmin and Tmax
 # must be exactly 443 days in length.
+
 ImapFuncNewJ = function(Tmin, Tmax, StartT){
   #########################################################################################
   # Components of the phenology model
@@ -121,7 +122,7 @@ ImapFuncNewJ = function(Tmin, Tmax, StartT){
   # avec[128]
   # avec[129]
   
-  # Defining all of the parameters
+  # Defining all of the parameters ------
   
   # Defining the time step
   # We will assume that the reaction rate is measured per day
@@ -224,7 +225,7 @@ ImapFuncNewJ = function(Tmin, Tmax, StartT){
   Flown = rep(0,length(Tmin))
   
   ##########################################
-  # Initializing all of the stages 
+  # Initializing all of the stages ------
   ##########################################
   # Initializing the old eggs
   OldE = rep(0,length(avec))
@@ -262,11 +263,11 @@ ImapFuncNewJ = function(Tmin, Tmax, StartT){
   NewTtm1 = 0.0
   
   #################################################################################
-  # The integrated IMAP (Insect Mortality and Phenology) model
+  # The integrated IMAP (Insect Mortality and Phenology) model ------
   #################################################################################
   
   # Doing the iteration
-  for(i in (StartT+1):length(Tmin)){
+  for(i in (StartT+1):length(Temp)){
     
     # Making an adjustment to minimum air temperature to account for the buffering
     # effect of tree bark as described by Bolstad, Bentz, and Logan (1997)
@@ -614,25 +615,28 @@ ImapFuncNewJ = function(Tmin, Tmax, StartT){
 
 # Now I will test the Imap function
 # Reading in some temperature data (in degrees C)
-#Tmin = read.csv("JasperDailyMin2.csv", h = F)   # Min temp  
-#Tmax = read.csv("JasperDailyMax2.csv", h = F)   # Max temp
+Tmin = read.csv("C:\\Users\\Grace.Veenstra\\Documents\\GitHub\\Goodsman_IPM\\ece33590-sup-0004-supinfo1\\JasperDailyMin2.csv", h = F)   # Min temp  
+Tmax = read.csv("C:\\Users\\Grace.Veenstra\\Documents\\GitHub\\Goodsman_IPM\\ece33590-sup-0004-supinfo1\\JasperDailyMax2.csv", h = F)   # Max temp
 
-#Tmin = as.numeric(Tmin$V1)
-#Tmax = as.numeric(Tmax$V1)
+Tmin = as.numeric(Tmin$V1)
+Tmax = as.numeric(Tmax$V1)
 
-#ptm <- proc.time()
-#Out1 = ImapFuncNewJ(Tmin = Tmin, Tmax = Tmax, StartT = 15)
-#proc.time() - ptm
+ptm <- proc.time()
+Out1 = ImapFuncNewJ(Tmin = Tmin, Tmax = Tmax, StartT = 15)
+proc.time() - ptm
 
-#Times = 1:443
-#plot(Out1[1,] ~ Times, type = 'l')
-#lines(Out1[2,] ~ Times, lty = 2)
-#lines(Out1[3,] ~ Times, lty = 3)
-#lines(Out1[4,] ~ Times, lty = 1, col = 'blue')
-#lines(Out1[5,] ~ Times, lty = 1, col = 'orange')
-#lines(Out1[6,] ~ Times, lty = 1, col = 'green')
-#lines(Out1[7,] ~ Times, lty = 2, col = 'purple')
-#lines(Out1[8,] ~ Times, lty = 2, col = 'grey')
-#lines(Out1[9,] ~ Times, lty = 1, col = 'red')
-#colSums(Out1)
+Times = 1:443
+plot(Out1[1,] ~ Times, type = 'l')
+lines(Out1[2,] ~ Times, lty = 2)
+lines(Out1[3,] ~ Times, lty = 3)
+lines(Out1[4,] ~ Times, lty = 1, col = 'blue')
+lines(Out1[5,] ~ Times, lty = 1, col = 'orange')
+lines(Out1[6,] ~ Times, lty = 1, col = 'green')
+lines(Out1[7,] ~ Times, lty = 2, col = 'purple')
+lines(Out1[8,] ~ Times, lty = 2, col = 'grey')
+lines(Out1[9,] ~ Times, lty = 1, col = 'red')
+colSums(Out1)
 # Yes; it works.
+
+
+plot(Eggs, type='l', xlim=c(0,30))
