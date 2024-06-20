@@ -1,19 +1,5 @@
 ### Working on Perry + Juvenile
 
-
-TempFile_1 = "C:\\Users\\Grace.Veenstra\\Documents\\GitHub\\Goodsman_IPM\\Egg Modeling Test\\MarshCreek_Temp_2015-2018.csv"
-StreamIdentifier_1 = "1706020503"
-StreamName_1 = "Marsh Creek"
-StreamNameAbb_1 = "MAR"
-
-TempFile_2 = "C:\\Users\\Grace.Veenstra\\Documents\\GitHub\\Goodsman_IPM\\Egg Modeling Test\\MarshCreek_Temp_2015-2018.csv"
-StreamIdentifier_2 = "1706020503"
-StreamName_2 = "Marsh Creek"
-StreamNameAbb_2 = "MAR"
-
-StartYear = ""
-TempModelType = "MARSS" #"Aimee"
-
 ##### Packages Set Up -----
 
 # install.packages("anytime")
@@ -35,14 +21,36 @@ library(here)
 library(zoo)
 
 
+### Files and Specifications -----
+
+TempFile_1 = "C:\\Users\\Grace.Veenstra\\Documents\\GitHub\\Goodsman_IPM\\Egg Modeling Test\\MarshCreek_Temp_2015-2018.csv"
+StreamIdentifier_1 = "1706020503"
+StreamName_1 = "Marsh Creek"
+StreamNameAbb_1 = "MAR"
+
+#TempFile_2 = "C:\\Users\\Grace.Veenstra\\Documents\\GitHub\\Goodsman_IPM\\Egg Modeling Test\\MarshCreek_Temp_2015-2018.csv"
+#StreamIdentifier_2 = "1706020503"
+#StreamName_2 = "Marsh Creek"
+#StreamNameAbb_2 = "MAR"
+
+StartYear = "2015"
+#Choose ModelType and ModelStreams
+TempModelType = "Aimee"
+ TempModelType = "MARSS" 
+TempModelStreams = "(Marsh)"
+ TempModelStreams = "(Marsh/WhiteBird)"
+ 
+sizedate = "July 15 2016"
+sizedate <- parse_date_time(sizedate, orders=c('mdy','ymd'))
+
 ##### Temperature -----
 
 ## Reading in the temperature data (in degrees C)
-temp_df <- read.csv(paste(TempFile), header=TRUE) 
+temp_df <- read.csv(paste(TempFile_1), header=TRUE) 
   #takes csv file and creates dataframe
 temp_df <- temp_df[c("Date","HUC_10","Mean")] 
   #removes 'min' 'max' and 'HUC_8' columns from frame
-temp_df <- temp_df[which(temp_df$HUC_10 %in% paste(StreamIdentifier)),] 
+temp_df <- temp_df[which(temp_df$HUC_10 %in% paste(StreamIdentifier_1)),] 
   #filters to only get Marsh Creek (Creek Identifier: "1706020503")
 temp_df$Date <- parse_date_time(temp_df$Date, orders=c('mdy','ymd')) 
   #reads different date formats
@@ -181,8 +189,6 @@ for(i in 1:length(temp)) {
   }
 }
 
-times = temp_df$Jdate
-
 ### Emergence
 
 if(i > spawndate_lower) {
@@ -193,9 +199,7 @@ if(i > spawndate_lower) {
     #repeats a given emergence day by the number of spawns on the associated spawn day
   freq.emerge <- as.vector(table(emerge.day))
     #creates a vector that lists the number of fish emerging on a given day
-    #### NEEDS FIX
-    #### Need to preserve the zeros from spawnfreq -> emerge freq
-  
+
   spawn_df$EmergeDay <- emergence
   x <- cbind.data.frame(unique(emerge.day), freq.emerge); names(x)[1] <- c("EmergeDay")
   spawn_df <- merge(spawn_df, x, by = "EmergeDay", all=T) ; spawn_df[is.na(spawn_df$freq.emerge),"freq.emerge"] <- 0
@@ -214,7 +218,7 @@ SizeFunc = function(a1, b1, c1, d1, e1, j, date) {
   size_df <- subset(temp_df, temp_df$Jdate >= j) 
   
   # restrict size_df to between emergence and a certain date
-  size_df <- subset(size_df, size_df$Jdate <= date)
+  size_df <- subset(size_df, size_df$Date <= date)
   
   emergence_weight = 35^2.953*0.00001432 #emergence mass (size 35 mm)
   omega <- (a1*(size_df$Mean-b1)*(1-exp(c1*(size_df$Mean-d1)))) #growth rate
@@ -255,12 +259,11 @@ e1 <- 0.338 #b
 juv_size <- rep(0,length(emerge.window))
 j = min(emerge.day)
 
-
 #Juv Size
 for(j in emergence) {
 
   #extracts juvenile length on given data
-  juv_length <- SizeFunc(a1, b1, c1, d1, e1, j, date = 562)
+  juv_length <- SizeFunc(a1, b1, c1, d1, e1, j, date = sizedate)
   
   #writes the size on the given date for a particular emergence day
   juv_size[j] <- tail(juv_length, n=1) 
@@ -272,6 +275,8 @@ juv_size[is.na(juv_size)] <- 0 ; juv_size <- juv_size[! juv_size %in% c('0')]
 
 
 ### Graphing
+
+times = temp_df$Jdate
 
 if(i > min(emergence)) {
   size_dist <- rep(juv_size, spawn_df$freq.emerge) 
@@ -291,8 +296,6 @@ hist(emerge.day, xlim=c(420,525), xlab="Day of Emergence",
 hist(spawn_dist, xlim=c(210,250), xlab="Spawn Date", 
      main="Distribution of Spawning Date 
      for Marsh Creek, 2016")
-
-
 
 
 #Dataframing

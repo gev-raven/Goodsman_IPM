@@ -3,14 +3,14 @@
 ###### Set your files, pick your regime ~ -----
 
 #Stream_1 is what the fish start from (etc. spawn in Marsh, start from Marsh)
-#Stream_2 is a supplemental stream for additon
+#Stream_2 is a supplemental stream for addition
+
+TempSwitchDate = "Oct 1 2017" #date switch temp. data; will need to comment in/out relevant piece in for-loop
 
 TempFile_AimeeRegional_1 = "C:\\Users\\Grace.Veenstra\\Documents\\GitHub\\Goodsman_IPM\\Data\\UpperMFSalmon_TempModel_EntireTimeSeries.csv"
 HUC10_1 = "X1706020503"
 StreamName_1 = "Marsh Creek"
 StreamNameAbb_1 = "MAR"
-  
-TempSwitchDate = "Oct 1 2017" #date switch temp. data; will need to comment in/out relevant piece in for-loop
 
 TempFile_AimeeRegional_2 = "C:\\Users\\Grace.Veenstra\\Documents\\GitHub\\Goodsman_IPM\\Data\\LowerSalmon_TempModel_EntireTimeSeries.csv"
 HUC10_2 = "X1706020906"
@@ -18,7 +18,9 @@ StreamName_2 = "White Bird Creek"
 StreamNameAbb_2 = "MAR"
 
 TempFile_MARSS_1 = "C:\\Users\\Grace.Veenstra\\Documents\\GitHub\\Goodsman_IPM\\Data\\Marsh_hourly_1993to2020.csv"
+StreamName_1 = "Marsh Creek"
 TempFile_MARSS_2 = "C:\\Users\\Grace.Veenstra\\Downloads\\whitebird_env2.csv"
+StreamName_2 = "White Bird"
 
 GrowthFile = "C:\\Users\\Grace.Veenstra\\Documents\\GitHub\\Goodsman_IPM\\Data\\Wild Chinook recaps_growth data all years.csv"
 GrowthStream = "Marsh Creek"
@@ -30,11 +32,28 @@ TempModelType = "Aimee"
 TempModelStreams = "(Marsh)"
   TempModelStreams = "(Marsh/WhiteBird)"
 
-  
-##### TEMP CODING -----
+##############################################
+###### Packages Set Up ----- 
+##############################################
+# install.packages("anytime")
+# install.packages("tidyverse")
+# install.packages("dbplyr")
+# install.packages("dplyr")
+# install.packages("dtplyr")
+# install.packages("lubridate")
+
+library(anytime)
+library(tidyverse)
+library(dbplyr)
+library(dplyr)
+library(dtplyr)
+library(lubridate)
+
+
+##### TEMP CODING [USE ONLY RELEVANT SECTION] -----
 ###########################
   
-#### TEMP (All Annual)
+#### TEMP - AIMEE (All Annual)
 #temp_df <- read.csv("C:\\Users\\Grace.Veenstra\\Documents\\GitHub\\Goodsman_IPM\\Data\\TempModel_2003-2004.csv", header=TRUE) 
 temp_df <- read.csv("~\\GitHub\\Goodsman_IPM\\Data\\TempModel_2011-2012.csv", 
                     header=TRUE)
@@ -45,22 +64,21 @@ temp_df$Date <- parse_date_time(temp_df$Date, orders=c('mdy','ymd'))
 temp_df$Date <- format.Date(temp_df$Date, format="%Y-%m-%d")
 temp_df$Ydate <- yday(temp_df$Date)
 temp_df$Jdate <- 1:nrow(temp_df)
-#temp <- temp_df$Mean #assigns variable to the mean temp in data
-#temp <- as.numeric(temp)
 
 
-#### TEMP 2 - AIMEE (Regional - Entire Time Series)
+#### TEMP 2 - AIMEE DATA (Regional - Entire Time Series)
+#Temp Set #1
 temp_df <- read.csv(paste(TempFile_AimeeRegional_1), header=TRUE)
-temp_df <- temp_df[c("Date","X1706020503")] 
+temp_df <- temp_df[c("Date", paste(HUC10_1))] 
                             #Marsh Creek
 colnames(temp_df) <- c("Date", "Mean")
 temp_df$Date <- parse_date_time(temp_df$Date, orders=c('mdy','ymd')) 
 temp_df$Date <- format.Date(temp_df$Date, format="%Y-%m-%d")
 temp_df$Ydate <- yday(temp_df$Date)
-#temp_df$Jdate <- 1:nrow(temp_df) #since 1990
 
+#Temp Set #2
 temp_df2 <- read.csv(paste(TempFile_AimeeRegional_2), header=TRUE)
-temp_df2 <- temp_df2[c("Date","X1706020906")] 
+temp_df2 <- temp_df2[c("Date", paste(HUC10_2))] 
                               #White Bird Creek
 colnames(temp_df2) <- c("Date", "Mean")
 temp_df2$Date <- parse_date_time(temp_df2$Date, orders=c('mdy','ymd')) 
@@ -68,7 +86,7 @@ temp_df2$Date <- format.Date(temp_df2$Date, format="%Y-%m-%d")
 temp_df2$Ydate <- yday(temp_df2$Date)
 
 
-#### TEMP 3 - MARSS
+#### TEMP 3 - MARSS DATA (Empirical)
 temp_df <- read.csv(paste(TempFile_MARSS_1), header=TRUE) # SPECIFIC TO MARSH CREEK HORULY
 temp_df <- temp_df[c("Observe.date", "Temperature")]
 colnames(temp_df) <- c("Date", "Temp")
@@ -90,21 +108,19 @@ temp_df2$Date <- format.Date(temp_df2$Date, format="%Y-%m-%d")
 temp_df2$Ydate <- yday(temp_df2$Date)
 
 
-#### GROWTH
-growth_df <- read.csv(paste(GrowthFile), header=TRUE) 
-growth_df <- growth_df[which(growth_df$Release.Site.Name %in% GrowthStream),]
+#### GROWTH / RECAPTURE DATA -----
+growth_df <- read.csv(paste(GrowthFile), header=TRUE) #reads csv files
+growth_df <- growth_df[which(growth_df$Release.Site.Name %in% GrowthStream),] #selects stream
                             ## Change Stream Name
 growth_df$Mark.Date <- parse_date_time(growth_df$Mark.Date, orders=c('mdy','ymd')) 
-growth_df$Mark.Date <- format.Date(growth_df$Mark.Date, format="%Y-%m-%d")
-growth_df <- growth_df[grep(paste(StartYear), growth_df$Mark.Date),]
-                            ## Change Year
+  growth_df$Mark.Date <- format.Date(growth_df$Mark.Date, format="%Y-%m-%d")
 growth_df$Recap.Date <- parse_date_time(growth_df$Recap.Date, orders=c('mdy','ymd')) 
-growth_df$Recap.Date <- format.Date(growth_df$Recap.Date, format="%Y-%m-%d")
+  growth_df$Recap.Date <- format.Date(growth_df$Recap.Date, format="%Y-%m-%d")
+growth_df <- growth_df[grep(paste(StartYear), growth_df$Mark.Date),] #selects start year
+                            ## Change Year
 
 
-
-
-######################
+###################### -----
 
 # Parameters for Juv Size
 a1 <- 0.415 #d
@@ -118,7 +134,7 @@ model.recap.length <- rep(0,length(growth_df$Tag.Code))
 
 for(i in 1:nrow(growth_df)) {
   
-  ind.fish <- growth_df[i,]
+  ind.fish <- growth_df[i,] #creates dataframe for just single fish we're running for
   j = ind.fish$Mark.DOY
   r = ind.fish$Recap.DOY + 365
   start_weight = ind.fish$Mark.Weight.g
@@ -135,21 +151,20 @@ for(i in 1:nrow(growth_df)) {
   
   juv_weight <- rep(0,(r-j))
   omega <- (a1*(temp-b1)*(1-exp(c1*(temp-d1)))) #growth rate
-  omega <- if_else(omega > 0, omega, 0)
+  omega <- if_else(omega > 0, omega, 0) #growth rate cannot be less than zero
   
   for(k in 1:(r - j + 1)) { #(k in j:date)
     if(k == 1) {
-      juv_weight[k] <- (start_weight^(e1) + omega[k]*(1/100)*e1)^(1/e1) 
-      #juv weight in grams
+      juv_weight[k] <- (start_weight^(e1) + omega[k]*(1/100)*e1)^(1/e1) #weight (grams)
     } else{
-      juv_weight[k] <- (juv_weight[k-1]^(e1) + omega[k]*(1/100)*e1)^(1/e1)
+      juv_weight[k] <- (juv_weight[k-1]^(e1) + omega[k]*(1/100)*e1)^(1/e1) #accumulates with each time step
     }
   }
   
-  juv_length <- ((juv_weight/0.00001432)^(1/2.953)) #juvenile length in mm
+  juv_length <- ((juv_weight/0.00001432)^(1/2.953)) #juvenile length (in mm)
   
-  model.recap.weight[i] <- tail(juv_weight, n=1)
-  model.recap.length[i] <- tail(juv_length, n=1)
+  model.recap.weight[i] <- tail(juv_weight, n=1) #model-predicated recapture weight on recapture day
+  model.recap.length[i] <- tail(juv_length, n=1) #model-predicated recapture length
   
 }
 
