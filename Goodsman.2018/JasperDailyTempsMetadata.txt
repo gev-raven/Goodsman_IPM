@@ -1,0 +1,4 @@
+The files JasperDailyMin2.csv and JasperDailyMax2.csv contain daily temperature minimums and maximums recorded at the Jasper Warden Station in
+Jasper National Park (Alberta, Canada Latitude 52.93, Longitude -118.03, elevation 1020 m). Each element in each file is the daily temperature 
+record in degrees centigrade for each day starting on July 15th 2014 and ending with September 30th 2015 (443 days). There is no header for the 
+single column (headers contain variable names).
